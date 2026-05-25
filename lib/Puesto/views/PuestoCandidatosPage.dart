@@ -541,12 +541,24 @@ class _FeedbackDialogState extends State<_FeedbackDialog> {
       return;
     }
 
+    final candidato = widget.postulacion['candidato'];
+    final candidatoId = candidato is Map
+        ? candidato['cuenta_id']?.toString()
+        : widget.postulacion['candidato_id']?.toString();
+
+    if (candidatoId == null || candidatoId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo identificar al postulante')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final success = await widget.contactoService.enviarFeedback(
       postulacionId: widget.postulacion['postulacion_id'],
       empresaId: widget.authService.cuentaId!,
-      cuentaId: widget.authService.cuentaId!,
+      cuentaId: candidatoId,
       tipoFeedback: _tipoFeedback,
       mensajeTexto: _mensajeController.text,
       motivoRechazo: _tipoFeedback == 'rechazo' ? _motivoController.text : null,
