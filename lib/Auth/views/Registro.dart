@@ -45,8 +45,9 @@ class _RegistroState extends State<Registro> {
     }
 
     // Validar contraseña
-    if (passwordController.text.length < 8) {
-      setState(() => errorMessage = "La contraseña debe tener al menos 8 caracteres.");
+    final passwordError = _validateStrongPassword(passwordController.text);
+    if (passwordError != null) {
+      setState(() => errorMessage = passwordError);
       return;
     }
 
@@ -89,7 +90,7 @@ class _RegistroState extends State<Registro> {
         Navigator.of(context).pop();
       } else {
         setState(() {
-          errorMessage = 'Error en el registro. El correo podría ya estar en uso.';
+          errorMessage = 'No se pudo crear la cuenta. Intenta nuevamente.';
           _isLoading = false;
         });
       }
@@ -100,6 +101,25 @@ class _RegistroState extends State<Registro> {
         _isLoading = false;
       });
     }
+  }
+
+  String? _validateStrongPassword(String password) {
+    if (password.length < 8) {
+      return "La contrasena debe tener al menos 8 caracteres.";
+    }
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      return "La contrasena debe incluir una letra mayuscula.";
+    }
+    if (!password.contains(RegExp(r'[a-z]'))) {
+      return "La contrasena debe incluir una letra minuscula.";
+    }
+    if (!password.contains(RegExp(r'[0-9]'))) {
+      return "La contrasena debe incluir un numero.";
+    }
+    if (!password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'))) {
+      return "La contrasena debe incluir un caracter especial.";
+    }
+    return null;
   }
 
   @override

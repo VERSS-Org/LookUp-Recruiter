@@ -108,7 +108,7 @@ class AuthService with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Registration error: $e');
-      return null;
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
