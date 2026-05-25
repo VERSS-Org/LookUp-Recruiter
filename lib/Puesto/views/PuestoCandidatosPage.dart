@@ -68,7 +68,8 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
             itemCount: postulacionService.postulacionesPuesto.length,
             itemBuilder: (context, index) {
               final postulacion = postulacionService.postulacionesPuesto[index];
-              final estadoActual = postulacion['estado'] ?? 'pendiente';
+              final estadoActual = (postulacion['estado'] ?? 'pendiente').toString();
+              final estadosDisponibles = _estadoOptions(estadoActual);
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -231,14 +232,7 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
                                   isExpanded: true,
                                   value: estadoActual,
                                   underline: const SizedBox(),
-                                  items: <String>[
-                                    'pendiente',
-                                    'en_revision',
-                                    'entrevista',
-                                    'oferta',
-                                    'aceptado',
-                                    'rechazado'
-                                  ].map<DropdownMenuItem<String>>((String value) {
+                                  items: estadosDisponibles.map<DropdownMenuItem<String>>((String value) {
                                     return DropdownMenuItem<String>(
                                       value: value,
                                       child: Text(
@@ -287,6 +281,20 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
   }
 
   /// Widget para mostrar el badge de estado
+  List<String> _estadoOptions(String estado) {
+    const transitions = <String, List<String>>{
+      'pendiente': ['pendiente', 'en_revision', 'entrevista', 'aceptado', 'oferta', 'rechazado', 'rechazo'],
+      'en_revision': ['en_revision', 'entrevista', 'aceptado', 'oferta', 'rechazado', 'rechazo'],
+      'entrevista': ['entrevista', 'aceptado', 'oferta', 'rechazado', 'rechazo'],
+      'aceptado': ['aceptado', 'entrevista', 'oferta', 'rechazado', 'rechazo'],
+      'oferta': ['oferta'],
+      'rechazado': ['rechazado'],
+      'rechazo': ['rechazo'],
+    };
+
+    return transitions[estado] ?? <String>[estado];
+  }
+
   Widget _buildEstadoBadge(String estado) {
     Color color;
     IconData icon;
@@ -313,6 +321,7 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
         icon = Icons.check_circle;
         break;
       case 'rechazado':
+      case 'rechazo':
         color = Colors.red;
         icon = Icons.cancel;
         break;

@@ -94,7 +94,6 @@ class ApiService {
   }
 
   dynamic _processResponse(http.Response response) {
-    // Enhanced debugging
     debugPrint('API Response => Status: ${response.statusCode}, URL: ${response.request?.url}');
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -108,9 +107,16 @@ class ApiService {
         return response.body;
       }
     } else {
-      // Throw an exception with the status code to be caught by the service
       debugPrint('API Error Body: ${response.body}');
-      throw Exception('Request failed with status: ${response.statusCode}');
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = null;
+      }
+
+      final detail = decoded is Map ? decoded['detail'] : null;
+      throw Exception(detail?.toString() ?? 'Request failed with status: ${response.statusCode}');
     }
   }
 }
