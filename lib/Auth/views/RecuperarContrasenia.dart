@@ -49,12 +49,27 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: kBrandGradient,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: softShadow(opacity: 0.28, blur: 26, y: 12),
+                ),
+                child: const Icon(
+                  Icons.lock_reset_rounded,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 22),
               const Text(
                 "Recuperar Contraseña",
                 style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: kBrandBlue,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: kInk,
+                  letterSpacing: -0.3,
                 ),
               ),
               const SizedBox(height: 10),
@@ -63,67 +78,72 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.black54,
+                  color: kInkMuted,
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 35),
+              const SizedBox(height: 32),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: softShadow(opacity: 0.08, blur: 18, y: 8),
                 ),
                 child: TextField(
                   controller: emailController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     prefixIcon:
-                        const Icon(Icons.email_outlined, color: kBrandBlue),
+                        Icon(Icons.email_outlined, color: kInkMuted),
                     hintText: "Ingresa tu correo electrónico",
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 15, horizontal: 15),
+                    hintStyle: TextStyle(color: kInkMuted),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 26),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 52,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kBrandBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                   onPressed: _enviarCorreo,
-                  child: const Text(
-                    "Enviar Correo de Recuperación",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: const Text("Enviar Correo de Recuperación"),
                 ),
               ),
               const SizedBox(height: 20),
               if (mensaje != null)
-                Text(
-                  mensaje!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.green,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF7EE),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFBFE6CB)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        color: Color(0xFF1E8E4E),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          mensaje!,
+                          style: const TextStyle(
+                            color: Color(0xFF1E7A45),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],

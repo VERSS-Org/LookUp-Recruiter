@@ -37,8 +37,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'LookUp',
             theme: buildLookUpTheme(),
-            // Define la pantalla de arranque
-            home: const Login(),
+            home: const SessionGate(),
             // Define las rutas nombradas de la aplicación
             routes: {
               '/home': (context) => const BarraNavegacion(),
@@ -49,6 +48,91 @@ class MyApp extends StatelessWidget {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class SessionGate extends StatefulWidget {
+  const SessionGate({super.key});
+
+  @override
+  State<SessionGate> createState() => _SessionGateState();
+}
+
+class _SessionGateState extends State<SessionGate> {
+  late final Future<bool> _sessionFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionFuture = _restoreSession();
+  }
+
+  Future<bool> _restoreSession() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final restored = await authService.tryAutoLogin();
+    if (!restored) return false;
+    if (authService.role != 'empresa') {
+      await authService.logout();
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _sessionFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SplashScreen();
+        }
+        return snapshot.data == true ? const BarraNavegacion() : const Login();
+      },
+    );
+  }
+}
+
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(gradient: kBrandGradient),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.16),
+                      blurRadius: 30,
+                      offset: const Offset(0, 14),
+                    ),
+                  ],
+                ),
+                child: Image.asset('assets/images/logo_lookup.png', width: 140),
+              ),
+              const SizedBox(height: 28),
+              const SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.6,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

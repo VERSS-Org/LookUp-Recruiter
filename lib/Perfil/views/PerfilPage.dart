@@ -51,37 +51,57 @@ class _PerfilPageState extends State<PerfilPage> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
               children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      children: [
-                        _ProfileAvatar(
-                            fotoUrl: profile['foto_url']?.toString()),
-                        const SizedBox(height: 14),
-                        Text(
-                          profile['nombre_completo']?.toString() ?? 'Usuario',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: kInk),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(18, 26, 18, 22),
+                  decoration: BoxDecoration(
+                    gradient: kBrandGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: softShadow(opacity: 0.30, blur: 28, y: 14),
+                  ),
+                  child: Column(
+                    children: [
+                      _ProfileAvatar(
+                        fotoUrl: profile['foto_url']?.toString(),
+                        onGradient: true,
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        profile['nombre_completo']?.toString() ?? 'Usuario',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.3,
                         ),
-                        const SizedBox(height: 6),
-                        Text(profile['email']?.toString() ?? '',
-                            style: TextStyle(color: Colors.grey.shade700)),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.photo_camera_outlined),
-                          label: const Text('Cambiar foto'),
-                          onPressed: () => _showPhotoDialog(
-                              context,
-                              authService,
-                              profileService,
-                              profile['foto_url']?.toString()),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        profile['email']?.toString() ?? '',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.photo_camera_outlined),
+                        label: const Text('Cambiar foto'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            width: 1.4,
+                          ),
+                          minimumSize: const Size(0, 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                        ),
+                        onPressed: () => _showPhotoDialog(
+                            context,
+                            authService,
+                            profileService,
+                            profile['foto_url']?.toString()),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -232,21 +252,34 @@ class _PerfilPageState extends State<PerfilPage> {
 }
 
 class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.fotoUrl});
+  const _ProfileAvatar({required this.fotoUrl, this.onGradient = false});
 
   final String? fotoUrl;
+  final bool onGradient;
 
   @override
   Widget build(BuildContext context) {
     final url = fotoUrl?.trim();
-    return CircleAvatar(
-      radius: 46,
-      backgroundColor: kBrandBlue,
-      backgroundImage: url == null || url.isEmpty ? null : NetworkImage(url),
-      onBackgroundImageError: url == null || url.isEmpty ? null : (_, __) {},
-      child: url == null || url.isEmpty
-          ? const Icon(Icons.business, color: Colors.white, size: 40)
-          : null,
+    return Container(
+      padding: EdgeInsets.all(onGradient ? 4 : 0),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: onGradient ? Colors.white.withValues(alpha: 0.25) : null,
+        border: onGradient
+            ? Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2)
+            : null,
+        boxShadow:
+            onGradient ? null : softShadow(opacity: 0.18, blur: 18, y: 8),
+      ),
+      child: CircleAvatar(
+        radius: 46,
+        backgroundColor: onGradient ? kBrandBlueAlt : kBrandBlue,
+        backgroundImage: url == null || url.isEmpty ? null : NetworkImage(url),
+        onBackgroundImageError: url == null || url.isEmpty ? null : (_, __) {},
+        child: url == null || url.isEmpty
+            ? const Icon(Icons.business, color: Colors.white, size: 40)
+            : null,
+      ),
     );
   }
 }
@@ -271,7 +304,14 @@ class InfoCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: kBrandBlue, size: 24),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: kBrandBlue.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: kBrandBlue, size: 22),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -279,13 +319,15 @@ class InfoCard extends StatelessWidget {
                 children: [
                   Text(title,
                       style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: kInk)),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: kInkMuted)),
                   const SizedBox(height: 4),
                   Text(content,
-                      style:
-                          TextStyle(fontSize: 15, color: Colors.grey.shade800)),
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: kInk)),
                 ],
               ),
             ),

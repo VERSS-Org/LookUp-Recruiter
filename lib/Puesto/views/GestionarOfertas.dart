@@ -43,10 +43,23 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
             return RefreshIndicator(
               onRefresh: _refresh,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 28, 18, 28),
+                padding: const EdgeInsets.fromLTRB(18, 48, 18, 28),
                 children: [
-                  Image.asset('assets/images/logo_lookup.png', height: 92),
-                  const SizedBox(height: 22),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: softShadow(opacity: 0.12, blur: 26, y: 12),
+                      ),
+                      child: Image.asset(
+                        'assets/images/logo_lookup.png',
+                        height: 76,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 26),
                   const Text(
                     'Aun no has publicado ofertas',
                     textAlign: TextAlign.center,
@@ -54,10 +67,10 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                         fontSize: 20, fontWeight: FontWeight.w800, color: kInk),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Crea tu primer puesto para empezar a recibir postulantes.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey.shade700),
+                    style: TextStyle(color: kInkMuted, height: 1.4),
                   ),
                 ],
               ),
@@ -77,11 +90,11 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     leading: Container(
-                      width: 42,
-                      height: 42,
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
-                        color: kSkyBlue.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
+                        color: kSkyBlue.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(Icons.work_outline, color: kBrandBlue),
                     ),
@@ -93,7 +106,9 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                          puesto['ubicacion'] ?? 'Ubicacion no especificada'),
+                        puesto['ubicacion'] ?? 'Ubicacion no especificada',
+                        style: const TextStyle(color: kInkMuted),
+                      ),
                     ),
                     trailing:
                         const Icon(Icons.chevron_right, color: kBrandBlue),

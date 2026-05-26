@@ -80,17 +80,18 @@ class _RegistroState extends State<Registro> {
       if (!mounted) return;
 
       if (success != null) {
-        // Registro exitoso, mostrar mensaje y volver a login
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('¡Cuenta creada exitosamente! Ahora inicia sesión.'),
+            content: Text('Cuenta creada exitosamente.'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
         );
 
-        // Volver a la pantalla de login
-        Navigator.of(context).pop();
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/home',
+          (route) => false,
+        );
       } else {
         setState(() {
           errorMessage = 'No se pudo crear la cuenta. Intenta nuevamente.';
@@ -150,7 +151,33 @@ class _RegistroState extends State<Registro> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
+            const SizedBox(height: 4),
+
+            // Cabecera
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: kBrandGradient,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: softShadow(opacity: 0.28, blur: 24, y: 12),
+                ),
+                child: const Icon(
+                  Icons.business_center_outlined,
+                  color: Colors.white,
+                  size: 34,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Center(
+              child: Text(
+                'Crea tu cuenta de empresa para empezar a publicar ofertas.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: kInkMuted, height: 1.4),
+              ),
+            ),
+            const SizedBox(height: 24),
 
             // Nombre Completo
             _buildLabel("Nombre completo"),
@@ -202,14 +229,15 @@ class _RegistroState extends State<Registro> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red[100],
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFFFF1F1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFD3D3)),
                   ),
                   child: Text(
                     errorMessage!,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.red[700],
+                    style: const TextStyle(
+                      color: Color(0xFFB42525),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -225,7 +253,7 @@ class _RegistroState extends State<Registro> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kBrandBlue,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   disabledBackgroundColor: kBrandBlue.withValues(alpha: 0.5),
                 ),
@@ -297,20 +325,24 @@ class _RegistroState extends State<Registro> {
       keyboardType: keyboardType,
       enabled: enabled,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: kBrandBlue),
+        prefixIcon: Icon(icon, color: kInkMuted),
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey),
+        hintStyle: const TextStyle(color: kInkMuted),
         filled: true,
-        fillColor: enabled ? Colors.white : Colors.grey[100],
+        fillColor: enabled ? kFieldFill : const Color(0xFFE9EDF4),
         contentPadding:
-            const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: kHairline, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kBrandBlue, width: 1.3),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: kBrandBlue, width: 1.6),
         ),
       ),
     );
