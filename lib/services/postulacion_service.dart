@@ -67,7 +67,8 @@ class PostulacionService with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      final response = await _apiService.get('postulacion/?candidato_id=$candidatoId');
+      final response =
+          await _apiService.get('postulacion/?candidato_id=$candidatoId');
       if (response is List) {
         _misPostulaciones = response;
         debugPrint('Mis postulaciones cargadas: ${_misPostulaciones.length}');
@@ -92,10 +93,12 @@ class PostulacionService with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      final response = await _apiService.get('postulacion/?puesto_id=$puestoId');
+      final response =
+          await _apiService.get('postulacion/?puesto_id=$puestoId');
       if (response is List) {
         _postulacionesPuesto = response;
-        debugPrint('Postulaciones del puesto cargadas: ${_postulacionesPuesto.length}');
+        debugPrint(
+            'Postulaciones del puesto cargadas: ${_postulacionesPuesto.length}');
         // Log para verificar estructura de datos
         if (_postulacionesPuesto.isNotEmpty) {
           debugPrint('Primera postulación: ${_postulacionesPuesto[0]}');
@@ -113,7 +116,8 @@ class PostulacionService with ChangeNotifier {
   }
 
   /// Crear una nueva postulación (aplicar a un puesto)
-  Future<bool> applyForJob(String candidatoId, String puestoId, {List<Map<String, dynamic>>? documentos}) async {
+  Future<bool> applyForJob(String candidatoId, String puestoId,
+      {List<Map<String, dynamic>>? documentos}) async {
     _setLoading(true);
     _setError(null);
     try {
@@ -138,7 +142,8 @@ class PostulacionService with ChangeNotifier {
   }
 
   /// Obtener detalles de una postulación específica
-  Future<Map<String, dynamic>?> getPostulacionDetails(String postulacionId) async {
+  Future<Map<String, dynamic>?> getPostulacionDetails(
+      String postulacionId) async {
     _setError(null);
     try {
       final response = await _apiService.get('postulacion/$postulacionId');
@@ -154,7 +159,8 @@ class PostulacionService with ChangeNotifier {
   }
 
   /// Actualizar el estado de una postulación
-  Future<bool> updateEstadoPostulacion(String postulacionId, String nuevoEstado, String puestoId) async {
+  Future<bool> updateEstadoPostulacion(
+      String postulacionId, String nuevoEstado, String puestoId) async {
     _setError(null);
     try {
       await _apiService.patch('postulacion/$postulacionId/estado', {

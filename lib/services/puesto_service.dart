@@ -81,11 +81,13 @@ class PuestoService with ChangeNotifier {
       _setLoading(false);
     }
   }
-   /// Contar el número de puestos activos de una empresa
+
+  /// Contar el número de puestos activos de una empresa
   Future<int> getNumeroOfertasActivas(String empresaId) async {
     _setError(null);
     try {
-      final response = await _apiService.get('puesto/?empresa_id=$empresaId&estado=abierto');
+      final response =
+          await _apiService.get('puesto/?empresa_id=$empresaId&estado=abierto');
       if (response is List) {
         return response.length;
       }
@@ -101,7 +103,8 @@ class PuestoService with ChangeNotifier {
   Future<int> getNumeroOfertasCerradas(String empresaId) async {
     _setError(null);
     try {
-      final response = await _apiService.get('puesto/?empresa_id=$empresaId&estado=cerrado');
+      final response =
+          await _apiService.get('puesto/?empresa_id=$empresaId&estado=cerrado');
       if (response is List) {
         return response.length;
       }
@@ -215,7 +218,8 @@ class PuestoService with ChangeNotifier {
   }
 
   /// Cambiar estado de un puesto (abierto/cerrado)
-  Future<bool> cambiarEstadoPuesto(String puestoId, String nuevoEstado, String empresaId) async {
+  Future<bool> cambiarEstadoPuesto(
+      String puestoId, String nuevoEstado, String empresaId) async {
     _setError(null);
     try {
       final response = await _apiService.patch('puesto/$puestoId/estado', {

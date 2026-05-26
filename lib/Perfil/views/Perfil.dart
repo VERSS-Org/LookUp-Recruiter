@@ -26,7 +26,6 @@ class _PerfilState extends State<Perfil> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -41,7 +40,6 @@ class _PerfilState extends State<Perfil> {
               ),
             ),
             const SizedBox(height: 20),
-
             const CircleAvatar(
               radius: 40,
               backgroundImage: NetworkImage(
@@ -49,7 +47,6 @@ class _PerfilState extends State<Perfil> {
               ),
             ),
             const SizedBox(height: 12),
-
             const Text(
               "Tech Innovate",
               style: TextStyle(
@@ -58,9 +55,7 @@ class _PerfilState extends State<Perfil> {
                 color: Colors.black87,
               ),
             ),
-
             const SizedBox(height: 10),
-
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0A6375),
@@ -77,45 +72,36 @@ class _PerfilState extends State<Perfil> {
               icon: const Icon(Icons.edit, color: Colors.white, size: 18),
               label: const Text(
                 "Editar Perfil",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
               ),
             ),
-
             const SizedBox(height: 25),
-
             _buildInfoCard(
               icon: Icons.email_outlined,
               title: "Correo de Contacto",
               content: "contacto@techinnovate.com",
             ),
-
             const SizedBox(height: 12),
-
             _buildInfoCard(
               icon: Icons.phone_outlined,
               title: "Teléfono",
               content: "+56 9 1234 5678",
             ),
-
             const SizedBox(height: 12),
-
             _buildInfoCard(
               icon: Icons.description_outlined,
               title: "Descripción de la Empresa",
               content:
-              "Líderes en soluciones de software innovadoras, transformando industrias con tecnología de vanguardia y un enfoque centrado en el cliente.",
+                  "Líderes en soluciones de software innovadoras, transformando industrias con tecnología de vanguardia y un enfoque centrado en el cliente.",
             ),
-
             const SizedBox(height: 12),
-
             _buildInfoCard(
               icon: Icons.location_on_outlined,
               title: "Ubicación Sede Principal",
               content: "Av. Apoquindo 5950, Santiago, Chile",
             ),
-
             const SizedBox(height: 25),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -130,13 +116,14 @@ class _PerfilState extends State<Perfil> {
                 ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Sesión cerrada correctamente')),
+                    const SnackBar(
+                        content: Text('Sesión cerrada correctamente')),
                   );
 
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => const Login()),
-                        (route) => false,
+                    (route) => false,
                   );
                 },
                 icon: const Icon(Icons.logout, color: Colors.redAccent),

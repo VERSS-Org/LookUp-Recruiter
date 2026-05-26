@@ -9,16 +9,33 @@ class CrearPostulacion extends StatefulWidget {
 
 class _CrearPostulacionState extends State<CrearPostulacion> {
   final TextEditingController tituloController = TextEditingController();
-  final TextEditingController empresaController = TextEditingController(text: "Innovatech Solutions");
+  final TextEditingController empresaController =
+      TextEditingController(text: "Innovatech Solutions");
   final TextEditingController descripcionController = TextEditingController();
-  final TextEditingController direccionController = TextEditingController(); 
+  final TextEditingController direccionController = TextEditingController();
   final TextEditingController requisitosController = TextEditingController();
 
   String? _selectedCiudad;
   final List<String> _ciudades = [
-    'Lima', 'Arequipa', 'Trujillo', 'Chiclayo', 'Piura', 'Cusco', 'Huancayo', 
-    'Iquitos', 'Tacna', 'Chimbote', 'Juliaca', 'Ica', 'Pucallpa', 'Sullana', 
-    'Ayacucho', 'Cajamarca', 'Tarma', 'Huanuco', 'Huaraz'
+    'Lima',
+    'Arequipa',
+    'Trujillo',
+    'Chiclayo',
+    'Piura',
+    'Cusco',
+    'Huancayo',
+    'Iquitos',
+    'Tacna',
+    'Chimbote',
+    'Juliaca',
+    'Ica',
+    'Pucallpa',
+    'Sullana',
+    'Ayacucho',
+    'Cajamarca',
+    'Tarma',
+    'Huanuco',
+    'Huaraz'
   ];
 
   String tipoContrato = "Tiempo completo";
@@ -30,7 +47,8 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -39,7 +57,6 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
         ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -52,19 +69,18 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
               icon: Icons.work_outline,
             ),
             const SizedBox(height: 16),
-
             _buildLabel("Empresa"),
-            _buildReadOnlyBox(icon: Icons.apartment_outlined, text: empresaController.text),
+            _buildReadOnlyBox(
+                icon: Icons.apartment_outlined, text: empresaController.text),
             const SizedBox(height: 16),
-
             _buildLabel("Descripción del Puesto"),
             _buildTextField(
               controller: descripcionController,
-              hint: "Describe las responsabilidades y el día a día del puesto...",
+              hint:
+                  "Describe las responsabilidades y el día a día del puesto...",
               maxLines: 4,
             ),
             const SizedBox(height: 16),
-
             _buildLabel("Dirección Exacta (Distrito/Avenida)"),
             _buildTextField(
               controller: direccionController,
@@ -72,23 +88,20 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
               icon: Icons.location_on_outlined,
             ),
             const SizedBox(height: 16),
-            
             _buildLabel("Ciudad"),
             _buildCityDropdown(),
             const SizedBox(height: 16),
-
             _buildLabel("Tipo de Contrato"),
             _buildDropdown(),
             const SizedBox(height: 16),
-
             _buildLabel("Requisitos"),
             _buildTextField(
               controller: requisitosController,
-              hint: "Ej: 5 años de experiencia con React, conocimiento de Figma...",
+              hint:
+                  "Ej: 5 años de experiencia con React, conocimiento de Figma...",
               maxLines: 2,
             ),
             const SizedBox(height: 30),
-
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -104,7 +117,10 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
                 },
                 child: const Text(
                   "Publicar Oferta",
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -118,14 +134,16 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
     if (direccionController.text.isEmpty || _selectedCiudad == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor, completa la dirección y selecciona una ciudad.'),
+          content:
+              Text('Por favor, completa la dirección y selecciona una ciudad.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
-    
-    final String ubicacionFinal = "${direccionController.text}, $_selectedCiudad";
+
+    final String ubicacionFinal =
+        "${direccionController.text}, $_selectedCiudad";
 
     // Aquí iría la lógica para enviar al backend
     // Por ahora, solo mostramos un mensaje de éxito
@@ -169,7 +187,8 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
         hintStyle: TextStyle(color: Colors.grey[500]),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -249,8 +268,10 @@ class _CrearPostulacionState extends State<CrearPostulacion> {
           value: tipoContrato,
           isExpanded: true,
           items: const [
-            DropdownMenuItem(value: "Tiempo completo", child: Text("Tiempo completo")),
-            DropdownMenuItem(value: "Medio tiempo", child: Text("Medio tiempo")),
+            DropdownMenuItem(
+                value: "Tiempo completo", child: Text("Tiempo completo")),
+            DropdownMenuItem(
+                value: "Medio tiempo", child: Text("Medio tiempo")),
             DropdownMenuItem(value: "Prácticas", child: Text("Prácticas")),
             DropdownMenuItem(value: "Freelance", child: Text("Freelance")),
           ],

@@ -24,7 +24,8 @@ class DatosPostulante extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -33,7 +34,6 @@ class DatosPostulante extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -45,23 +45,17 @@ class DatosPostulante extends StatelessWidget {
               _buildItem("Universidad", datos["universidad"]),
               _buildItem("Años de experiencia", datos["experiencia"]),
             ]),
-
             const SizedBox(height: 16),
-
             _buildInfoCard([
               _buildItem("Teléfono", datos["telefono"]),
               _buildItem("Correo electrónico", datos["correo"]),
               _buildItem("Ciudad", datos["ciudad"]),
             ]),
-
             const SizedBox(height: 16),
-
             _buildInfoCard([
               _buildItem("Disponibilidad", datos["disponibilidad"]),
             ]),
-
             const SizedBox(height: 25),
-
             SizedBox(
               width: double.infinity,
               height: 50,

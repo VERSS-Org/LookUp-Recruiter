@@ -42,11 +42,11 @@ class _ListaPostulantesState extends State<ListaPostulantes> {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> postulantesFiltrados =
-    filtroSeleccionado == "Ver Todos"
-        ? postulantes
-        : postulantes
-        .where((p) => p["estado"] == filtroSeleccionado)
-        .toList();
+        filtroSeleccionado == "Ver Todos"
+            ? postulantes
+            : postulantes
+                .where((p) => p["estado"] == filtroSeleccionado)
+                .toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -54,8 +54,8 @@ class _ListaPostulantesState extends State<ListaPostulantes> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon:
-          const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -64,11 +64,9 @@ class _ListaPostulantesState extends State<ListaPostulantes> {
         ),
         centerTitle: true,
       ),
-
       body: Column(
         children: [
           const SizedBox(height: 10),
-
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -83,9 +81,7 @@ class _ListaPostulantesState extends State<ListaPostulantes> {
               ],
             ),
           ),
-
           const SizedBox(height: 10),
-
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),

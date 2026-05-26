@@ -36,7 +36,8 @@ class _PostulacionPageState extends State<PostulacionPage> {
                   itemBuilder: (context, index) {
                     final puesto = postulacionService.puestos[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: ListTile(
                         title: Text(puesto['titulo'] ?? 'Sin título'),
                         subtitle: Text(puesto['ubicacion'] ?? 'Sin ubicación'),
@@ -44,7 +45,8 @@ class _PostulacionPageState extends State<PostulacionPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PuestoDetailPage(puesto: puesto),
+                              builder: (context) =>
+                                  PuestoDetailPage(puesto: puesto),
                             ),
                           );
                         },

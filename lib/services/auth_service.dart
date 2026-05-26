@@ -32,7 +32,8 @@ class AuthService with ChangeNotifier {
     return true;
   }
 
-  Future<void> _saveCredentials(String token, String? refreshToken, String role, String cuentaId) async {
+  Future<void> _saveCredentials(
+      String token, String? refreshToken, String role, String cuentaId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     if (refreshToken != null) {
@@ -65,7 +66,7 @@ class AuthService with ChangeNotifier {
   /// Método para limpiar todos los servicios durante el logout
   Future<void> logoutAndClearAllServices(BuildContext context) async {
     try {
-       // Limpiar AuthService primero
+      // Limpiar AuthService primero
       await logout();
 
       // Notificar a todos los listeners que se ha hecho logout

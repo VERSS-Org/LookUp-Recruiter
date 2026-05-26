@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String _defaultBaseUrl = String.fromEnvironment(
     'LOOKUP_API_BASE_URL',
-    defaultValue: 'https://backend-ufl2-git-main-glitter22s-projects.vercel.app/api/',
+    defaultValue:
+        'https://backend-ufl2-git-main-glitter22s-projects.vercel.app/api/',
   );
   static final ApiService _instance = ApiService._internal();
 
@@ -39,7 +40,7 @@ class ApiService {
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
     final url = _baseUri.resolve(endpoint);
     final headers = await _getHeaders();
-    
+
     var response = await http.post(
       url,
       headers: headers,
@@ -94,7 +95,8 @@ class ApiService {
   }
 
   dynamic _processResponse(http.Response response) {
-    debugPrint('API Response => Status: ${response.statusCode}, URL: ${response.request?.url}');
+    debugPrint(
+        'API Response => Status: ${response.statusCode}, URL: ${response.request?.url}');
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) {
@@ -116,7 +118,8 @@ class ApiService {
       }
 
       final detail = decoded is Map ? decoded['detail'] : null;
-      throw Exception(detail?.toString() ?? 'Request failed with status: ${response.statusCode}');
+      throw Exception(detail?.toString() ??
+          'Request failed with status: ${response.statusCode}');
     }
   }
 }

@@ -16,7 +16,8 @@ class _MetricasPageState extends State<MetricasPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = Provider.of<AuthService>(context, listen: false);
-      final metricasService = Provider.of<MetricasService>(context, listen: false);
+      final metricasService =
+          Provider.of<MetricasService>(context, listen: false);
 
       if (authService.cuentaId != null) {
         metricasService.fetchMetricasResumen(authService.cuentaId!);
@@ -70,25 +71,33 @@ class _MetricasPageState extends State<MetricasPage> {
                       children: [
                         _buildMetricCard(
                           title: 'Postulaciones',
-                          value: metricasService.metricasResumen!['total_postulaciones'].toString(),
+                          value: metricasService
+                              .metricasResumen!['total_postulaciones']
+                              .toString(),
                           icon: Icons.send,
                           color: Colors.blue,
                         ),
                         _buildMetricCard(
                           title: 'Entrevistas',
-                          value: metricasService.metricasResumen!['total_entrevistas'].toString(),
+                          value: metricasService
+                              .metricasResumen!['total_entrevistas']
+                              .toString(),
                           icon: Icons.videocam,
                           color: Colors.orange,
                         ),
                         _buildMetricCard(
                           title: 'Éxitos',
-                          value: metricasService.metricasResumen!['total_exitos'].toString(),
+                          value: metricasService
+                              .metricasResumen!['total_exitos']
+                              .toString(),
                           icon: Icons.check_circle,
                           color: Colors.green,
                         ),
                         _buildMetricCard(
                           title: 'Rechazos',
-                          value: metricasService.metricasResumen!['total_rechazos'].toString(),
+                          value: metricasService
+                              .metricasResumen!['total_rechazos']
+                              .toString(),
                           icon: Icons.close,
                           color: Colors.red,
                         ),

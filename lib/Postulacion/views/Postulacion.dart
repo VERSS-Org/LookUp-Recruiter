@@ -30,7 +30,6 @@ class _PostulacionState extends State<Postulacion> {
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
         ),
       ),
-
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: ofertas.length,
@@ -78,7 +77,7 @@ class _PostulacionState extends State<Postulacion> {
                         Text(
                           "LookUp",
                           style:
-                          TextStyle(color: Colors.grey[600], fontSize: 13),
+                              TextStyle(color: Colors.grey[600], fontSize: 13),
                         ),
                         const SizedBox(height: 3),
                         Row(
@@ -88,8 +87,8 @@ class _PostulacionState extends State<Postulacion> {
                               color: oferta["estado"] == "Activa"
                                   ? Colors.green
                                   : oferta["estado"] == "En Pausa"
-                                  ? Colors.orange
-                                  : Colors.red,
+                                      ? Colors.orange
+                                      : Colors.red,
                               size: 8,
                             ),
                             const SizedBox(width: 5),
@@ -100,8 +99,8 @@ class _PostulacionState extends State<Postulacion> {
                                 color: oferta["estado"] == "Activa"
                                     ? Colors.green
                                     : oferta["estado"] == "En Pausa"
-                                    ? Colors.orange
-                                    : Colors.red,
+                                        ? Colors.orange
+                                        : Colors.red,
                               ),
                             ),
                           ],
@@ -109,11 +108,11 @@ class _PostulacionState extends State<Postulacion> {
                       ],
                     ),
                   ),
-
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                        icon:
+                            const Icon(Icons.edit_outlined, color: Colors.blue),
                         tooltip: "Editar postulación",
                         onPressed: () {
                           Navigator.push(
@@ -149,7 +148,6 @@ class _PostulacionState extends State<Postulacion> {
           );
         },
       ),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
         onPressed: () {

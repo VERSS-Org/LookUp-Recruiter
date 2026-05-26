@@ -20,18 +20,16 @@ class MetricasPostulante extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon:
-          const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Métricas del Postulante",
-          style:
-          TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -46,7 +44,6 @@ class MetricasPostulante extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
             GridView.count(
               shrinkWrap: true,
               crossAxisCount: 2,
@@ -72,9 +69,7 @@ class MetricasPostulante extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -91,8 +86,8 @@ class MetricasPostulante extends StatelessWidget {
               ),
               child: const Text(
                 "Estas métricas reflejan tu progreso en la búsqueda de empleo. "
-                    "Mantén un seguimiento constante para optimizar tus estrategias "
-                    "y alcanzar tus objetivos profesionales.",
+                "Mantén un seguimiento constante para optimizar tus estrategias "
+                "y alcanzar tus objetivos profesionales.",
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black87,

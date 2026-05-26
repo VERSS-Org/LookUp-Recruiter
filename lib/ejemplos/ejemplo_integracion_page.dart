@@ -24,7 +24,8 @@ class _EjemploIntegracionPageState extends State<EjemploIntegracionPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = Provider.of<AuthService>(context, listen: false);
       final puestoService = Provider.of<PuestoService>(context, listen: false);
-      final postulacionService = Provider.of<PostulacionService>(context, listen: false);
+      final postulacionService =
+          Provider.of<PostulacionService>(context, listen: false);
 
       // Cargar puestos disponibles
       puestoService.fetchAllPuestos();
@@ -44,7 +45,8 @@ class _EjemploIntegracionPageState extends State<EjemploIntegracionPage> {
         elevation: 2,
       ),
       body: Consumer3<PuestoService, PostulacionService, AuthService>(
-        builder: (context, puestoService, postulacionService, authService, child) {
+        builder:
+            (context, puestoService, postulacionService, authService, child) {
           if (puestoService.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -122,7 +124,8 @@ class _EjemploIntegracionPageState extends State<EjemploIntegracionPage> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                (puesto['estado'] ?? 'desconocido').toUpperCase(),
+                                (puesto['estado'] ?? 'desconocido')
+                                    .toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -242,9 +245,8 @@ class _EjemploIntegracionPageState extends State<EjemploIntegracionPage> {
                                     : 'Postularme Ahora',
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: yaPostulado
-                                    ? Colors.grey
-                                    : Colors.blue,
+                                backgroundColor:
+                                    yaPostulado ? Colors.grey : Colors.blue,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),

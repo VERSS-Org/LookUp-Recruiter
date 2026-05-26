@@ -23,15 +23,17 @@ class _EditarPostulacionState extends State<EditarPostulacion> {
   void initState() {
     super.initState();
     tituloController = TextEditingController(text: widget.oferta["titulo"]);
-    empresaController = TextEditingController(text: "Innovatech Solutions Inc.");
+    empresaController =
+        TextEditingController(text: "Innovatech Solutions Inc.");
     descripcionController = TextEditingController(
       text:
-      "Buscamos un Desarrollador o Diseñador apasionado por crear productos digitales excepcionales. Serás responsable de diseñar, probar e implementar soluciones innovadoras en un entorno ágil.",
+          "Buscamos un Desarrollador o Diseñador apasionado por crear productos digitales excepcionales. Serás responsable de diseñar, probar e implementar soluciones innovadoras en un entorno ágil.",
     );
-    ubicacionController = TextEditingController(text: "Santiago, Chile (Híbrido)");
+    ubicacionController =
+        TextEditingController(text: "Santiago, Chile (Híbrido)");
     requisitosController = TextEditingController(
       text:
-      "Experiencia comprobable en desarrollo de software o diseño UI/UX. Dominio de herramientas modernas y trabajo colaborativo.",
+          "Experiencia comprobable en desarrollo de software o diseño UI/UX. Dominio de herramientas modernas y trabajo colaborativo.",
     );
   }
 
@@ -43,7 +45,8 @@ class _EditarPostulacionState extends State<EditarPostulacion> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -52,7 +55,6 @@ class _EditarPostulacionState extends State<EditarPostulacion> {
         ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -60,29 +62,22 @@ class _EditarPostulacionState extends State<EditarPostulacion> {
           children: [
             _buildLabel("Título del Puesto"),
             _buildTextField(controller: tituloController),
-
             const SizedBox(height: 16),
             _buildLabel("Nombre de la Empresa"),
             _buildTextField(controller: empresaController),
-
             const SizedBox(height: 16),
             _buildLabel("Descripción del Puesto"),
             _buildTextField(controller: descripcionController, maxLines: 4),
-
             const SizedBox(height: 16),
             _buildLabel("Ubicación"),
             _buildTextField(controller: ubicacionController),
-
             const SizedBox(height: 16),
             _buildLabel("Tipo de Contrato"),
             _buildDropdown(),
-
             const SizedBox(height: 16),
             _buildLabel("Requisitos"),
             _buildTextField(controller: requisitosController, maxLines: 3),
-
             const SizedBox(height: 30),
-
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -100,7 +95,9 @@ class _EditarPostulacionState extends State<EditarPostulacion> {
 
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => DetallePostulacion(oferta: widget.oferta)),
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            DetallePostulacion(oferta: widget.oferta)),
                   );
                 },
                 child: const Text(
@@ -129,7 +126,8 @@ class _EditarPostulacionState extends State<EditarPostulacion> {
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.grey),
@@ -159,8 +157,10 @@ class _EditarPostulacionState extends State<EditarPostulacion> {
           value: tipoContrato,
           isExpanded: true,
           items: const [
-            DropdownMenuItem(value: "Tiempo completo", child: Text("Tiempo completo")),
-            DropdownMenuItem(value: "Medio tiempo", child: Text("Medio tiempo")),
+            DropdownMenuItem(
+                value: "Tiempo completo", child: Text("Tiempo completo")),
+            DropdownMenuItem(
+                value: "Medio tiempo", child: Text("Medio tiempo")),
             DropdownMenuItem(value: "Freelance", child: Text("Freelance")),
             DropdownMenuItem(value: "Prácticas", child: Text("Prácticas")),
           ],

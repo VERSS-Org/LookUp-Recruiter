@@ -45,7 +45,8 @@ class ProfileService with ChangeNotifier {
   }
 
   /// Actualizar información de la cuenta
-  Future<bool> updateProfile(String cuentaId, Map<String, dynamic> updates) async {
+  Future<bool> updateProfile(
+      String cuentaId, Map<String, dynamic> updates) async {
     _setLoading(true);
     try {
       final response = await _apiService.patch('iam/cuenta/$cuentaId', updates);

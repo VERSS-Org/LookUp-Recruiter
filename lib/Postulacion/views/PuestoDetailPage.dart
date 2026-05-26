@@ -51,7 +51,8 @@ class PuestoDetailPage extends StatelessWidget {
                 Expanded(
                   child: Text(
                     puesto['ubicacion'] ?? 'No especificada',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -66,7 +67,8 @@ class PuestoDetailPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Tipo: ${puesto['tipo_contrato'].toString().replaceAll('_', ' ').toUpperCase()}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -80,7 +82,8 @@ class PuestoDetailPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Salario: ${puesto['salario_min'] ?? '0'} - ${puesto['salario_max'] ?? '0'} ${puesto['moneda'] ?? 'MXN'}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -108,7 +111,8 @@ class PuestoDetailPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CrearPostulacionPage(puesto: puesto),
+                        builder: (context) =>
+                            CrearPostulacionPage(puesto: puesto),
                       ),
                     );
                   },

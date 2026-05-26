@@ -50,7 +50,8 @@ class _MisPostulacionesPageState extends State<MisPostulacionesPage> {
                 margin: const EdgeInsets.all(10.0),
                 child: ListTile(
                   title: Text(postulacion['puesto']?['titulo'] ?? 'Sin título'),
-                  subtitle: Text(postulacion['empresa']?['nombre'] ?? 'Sin empresa'),
+                  subtitle:
+                      Text(postulacion['empresa']?['nombre'] ?? 'Sin empresa'),
                   trailing: Chip(
                     label: Text(
                       postulacion['estado'] ?? 'desconocido',

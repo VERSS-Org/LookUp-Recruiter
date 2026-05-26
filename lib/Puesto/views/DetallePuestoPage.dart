@@ -36,7 +36,7 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
   Future<void> _cambiarEstado(Map<String, dynamic> puesto) async {
     final currentState = puesto['estado']?.toString() ?? 'abierto';
     final newState = currentState == 'abierto' ? 'cerrado' : 'abierto';
-    
+
     final puestoId = (puesto['puesto_id'] ?? puesto['id'])?.toString();
     final empresaId = puesto['empresa'] is Map
         ? puesto['empresa']['id']?.toString()
@@ -44,12 +44,16 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
 
     if (puestoId == null || empresaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: No se pudo identificar el puesto o la empresa.')),
+        const SnackBar(
+            content:
+                Text('Error: No se pudo identificar el puesto o la empresa.')),
       );
       return;
     }
 
-    final dialogTitle = Text(newState == 'cerrado' ? 'Confirmar Cierre de Oferta' : 'Confirmar Reapertura de Oferta');
+    final dialogTitle = Text(newState == 'cerrado'
+        ? 'Confirmar Cierre de Oferta'
+        : 'Confirmar Reapertura de Oferta');
     final dialogContent = Text(newState == 'cerrado'
         ? '¿Estás seguro de que quieres cerrar esta oferta? Los usuarios ya no podrán postularse ni verla.'
         : '¿Estás seguro de que quieres reabrir esta oferta? Volverá a estar visible para los usuarios.');
@@ -76,17 +80,22 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
 
     if (confirm == true) {
       final puestoService = Provider.of<PuestoService>(context, listen: false);
-      final success = await puestoService.cambiarEstadoPuesto(puestoId, newState, empresaId);
+      final success = await puestoService.cambiarEstadoPuesto(
+          puestoId, newState, empresaId);
 
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('El estado del puesto ha sido actualizado a "$newState".')),
+            SnackBar(
+                content: Text(
+                    'El estado del puesto ha sido actualizado a "$newState".')),
           );
           _refreshPuestoDetails();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(puestoService.errorMessage ?? 'Ocurrió un error al cambiar el estado.')),
+            SnackBar(
+                content: Text(puestoService.errorMessage ??
+                    'Ocurrió un error al cambiar el estado.')),
           );
         }
       }
@@ -107,9 +116,10 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error al cargar detalles: ${snapshot.error}'));
+            return Center(
+                child: Text('Error al cargar detalles: ${snapshot.error}'));
           }
-          
+
           final fetchedPuesto = snapshot.data;
           final displayPuesto = Map<String, dynamic>.from(widget.puesto);
 
@@ -133,9 +143,11 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (displayPuesto['empresa'] != null && displayPuesto['empresa'] is Map)
+                        if (displayPuesto['empresa'] != null &&
+                            displayPuesto['empresa'] is Map)
                           Text(
-                            displayPuesto['empresa']['nombre'] ?? 'Empresa no disponible',
+                            displayPuesto['empresa']['nombre'] ??
+                                'Empresa no disponible',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         const SizedBox(height: 8.0),
@@ -145,10 +157,15 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
                             const SizedBox(width: 8.0),
                             Expanded(
                               child: Text(
-                                (displayPuesto['ubicacion'] != null && displayPuesto['ubicacion'].toString().isNotEmpty)
+                                (displayPuesto['ubicacion'] != null &&
+                                        displayPuesto['ubicacion']
+                                            .toString()
+                                            .isNotEmpty)
                                     ? displayPuesto['ubicacion'].toString()
                                     : 'Ubicación no disponible',
-                                style: const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontSize: 24.0,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -158,12 +175,17 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
                           spacing: 8.0,
                           runSpacing: 8.0,
                           children: [
-                            if (displayPuesto['tipo_contrato'] != null && displayPuesto['tipo_contrato'].toString().isNotEmpty)
+                            if (displayPuesto['tipo_contrato'] != null &&
+                                displayPuesto['tipo_contrato']
+                                    .toString()
+                                    .isNotEmpty)
                               Chip(
-                                avatar: const Icon(Icons.work_outline, size: 16),
+                                avatar:
+                                    const Icon(Icons.work_outline, size: 16),
                                 label: Text(
                                   () {
-                                    final tipo = displayPuesto['tipo_contrato'].toString();
+                                    final tipo = displayPuesto['tipo_contrato']
+                                        .toString();
                                     if (tipo == 'tiempo_completo') {
                                       return 'Tiempo Completo';
                                     } else if (tipo == 'medio_tiempo') {
@@ -173,34 +195,46 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
                                   }(),
                                 ),
                               ),
-                            if (displayPuesto['salario_min'] != null || displayPuesto['salario_max'] != null)
+                            if (displayPuesto['salario_min'] != null ||
+                                displayPuesto['salario_max'] != null)
                               Chip(
-                                avatar: const Icon(Icons.attach_money, size: 16),
+                                avatar:
+                                    const Icon(Icons.attach_money, size: 16),
                                 label: Text(
                                     "\$${displayPuesto['salario_min'] ?? 0} - \$${displayPuesto['salario_max'] ?? 0}"),
                               ),
                             if (displayPuesto['estado'] != null)
                               Chip(
-                                avatar: const Icon(Icons.info_outline, size: 16),
+                                avatar:
+                                    const Icon(Icons.info_outline, size: 16),
                                 label: SizedBox(
                                   width: 90,
-                                  child: Center(child: Text(displayPuesto['estado'])),
+                                  child: Center(
+                                      child: Text(displayPuesto['estado'])),
                                 ),
-                                backgroundColor: isAbierto ? Colors.green[100] : Colors.red[300],
+                                backgroundColor: isAbierto
+                                    ? Colors.green[100]
+                                    : Colors.red[300],
                               ),
                             if (displayPuesto['fecha_publicacion'] != null)
                               Chip(
-                                avatar: const Icon(Icons.calendar_today, size: 16),
+                                avatar:
+                                    const Icon(Icons.calendar_today, size: 16),
                                 label: SizedBox(
                                   width: 90,
                                   child: Center(
                                     child: Text(
                                       (() {
                                         try {
-                                          final date = DateTime.parse(displayPuesto['fecha_publicacion']);
+                                          final date = DateTime.parse(
+                                              displayPuesto[
+                                                  'fecha_publicacion']);
                                           return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
                                         } catch (e) {
-                                          return displayPuesto['fecha_publicacion'].toString().split('T')[0];
+                                          return displayPuesto[
+                                                  'fecha_publicacion']
+                                              .toString()
+                                              .split('T')[0];
                                         }
                                       })(),
                                     ),
@@ -219,10 +253,14 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () => _cambiarEstado(displayPuesto),
-                      icon: Icon(isAbierto ? Icons.lock_outline : Icons.lock_open_outlined),
-                      label: Text(isAbierto ? 'Cerrar Oferta' : 'Reabrir Oferta'),
+                      icon: Icon(isAbierto
+                          ? Icons.lock_outline
+                          : Icons.lock_open_outlined),
+                      label:
+                          Text(isAbierto ? 'Cerrar Oferta' : 'Reabrir Oferta'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isAbierto ? Colors.redAccent : Colors.green,
+                        backgroundColor:
+                            isAbierto ? Colors.redAccent : Colors.green,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12.0),
                         textStyle: const TextStyle(fontSize: 16),
@@ -235,12 +273,15 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
                   style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8.0),
-                Text(displayPuesto['descripcion'] ?? 'No hay descripción disponible.'),
-                if (displayPuesto['requisitos'] != null && (displayPuesto['requisitos'] as List).isNotEmpty) ...[
+                Text(displayPuesto['descripcion'] ??
+                    'No hay descripción disponible.'),
+                if (displayPuesto['requisitos'] != null &&
+                    (displayPuesto['requisitos'] as List).isNotEmpty) ...[
                   const SizedBox(height: 16.0),
                   const Text(
                     'Requisitos',
-                    style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                    style:
+                        TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8.0),
                   ...(displayPuesto['requisitos'] as List).map((req) {
@@ -270,7 +311,8 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => PuestoCandidatosPage(puesto: widget.puesto),
+                builder: (context) =>
+                    PuestoCandidatosPage(puesto: widget.puesto),
               ),
             );
           },

@@ -13,7 +13,8 @@ class _RegistroState extends State<Registro> {
   final TextEditingController nombreController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   String? errorMessage;
   bool _isLoading = false;
@@ -34,7 +35,8 @@ class _RegistroState extends State<Registro> {
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
         confirmPasswordController.text.isEmpty) {
-      setState(() => errorMessage = "Por favor completa todos los campos obligatorios.");
+      setState(() =>
+          errorMessage = "Por favor completa todos los campos obligatorios.");
       return;
     }
 
@@ -130,7 +132,8 @@ class _RegistroState extends State<Registro> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: _isLoading ? null : () => Navigator.pop(context),
         ),
         title: const Text(
@@ -224,7 +227,8 @@ class _RegistroState extends State<Registro> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  disabledBackgroundColor: const Color(0xFF0A6375).withOpacity(0.5),
+                  disabledBackgroundColor:
+                      const Color(0xFF0A6375).withOpacity(0.5),
                 ),
                 onPressed: _isLoading ? null : _registrar,
                 child: _isLoading
@@ -299,7 +303,8 @@ class _RegistroState extends State<Registro> {
         hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
         fillColor: enabled ? Colors.white : Colors.grey[100],
-        contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),

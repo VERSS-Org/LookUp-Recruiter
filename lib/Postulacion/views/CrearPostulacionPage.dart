@@ -79,15 +79,17 @@ class _CrearPostulacionPageState extends State<CrearPostulacionPage> {
                     _buildInfoRow(
                       icon: Icons.work,
                       label: 'Tipo de Contrato',
-                      value: (widget.puesto['tipo_contrato'] ?? 'No especificado')
-                          .toString()
-                          .replaceAll('_', ' ')
-                          .toUpperCase(),
+                      value:
+                          (widget.puesto['tipo_contrato'] ?? 'No especificado')
+                              .toString()
+                              .replaceAll('_', ' ')
+                              .toUpperCase(),
                     ),
                     const SizedBox(height: 12),
 
                     // Información de salario si está disponible
-                    if (widget.puesto['salario_min'] != null || widget.puesto['salario_max'] != null)
+                    if (widget.puesto['salario_min'] != null ||
+                        widget.puesto['salario_max'] != null)
                       Column(
                         children: [
                           _buildInfoRow(
@@ -185,7 +187,8 @@ class _CrearPostulacionPageState extends State<CrearPostulacionPage> {
                         height: 52,
                         child: ElevatedButton.icon(
                           onPressed: () async {
-                            final success = await postulacionService.applyForJob(
+                            final success =
+                                await postulacionService.applyForJob(
                               authService.cuentaId!,
                               widget.puesto['puesto_id'],
                             );
@@ -201,14 +204,16 @@ class _CrearPostulacionPageState extends State<CrearPostulacionPage> {
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
-                                Navigator.of(context).popUntil((route) => route.isFirst);
+                                Navigator.of(context)
+                                    .popUntil((route) => route.isFirst);
                               }
                             } else {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      postulacionService.errorMessage ?? 'Error al postular.',
+                                      postulacionService.errorMessage ??
+                                          'Error al postular.',
                                     ),
                                     backgroundColor: Colors.red,
                                     duration: const Duration(seconds: 2),
@@ -220,7 +225,8 @@ class _CrearPostulacionPageState extends State<CrearPostulacionPage> {
                           icon: const Icon(Icons.check_circle),
                           label: const Text(
                             'Confirmar Postulación',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
@@ -240,7 +246,8 @@ class _CrearPostulacionPageState extends State<CrearPostulacionPage> {
                           icon: const Icon(Icons.cancel),
                           label: const Text(
                             'Cancelar',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.grey[700],

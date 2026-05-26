@@ -8,7 +8,10 @@ class HomeAdmin extends StatefulWidget {
   final VoidCallback onNavigateToProfile;
   final VoidCallback onNavigateToOfertas;
 
-  const HomeAdmin({super.key, required this.onNavigateToProfile, required this.onNavigateToOfertas});
+  const HomeAdmin(
+      {super.key,
+      required this.onNavigateToProfile,
+      required this.onNavigateToOfertas});
 
   @override
   State<HomeAdmin> createState() => _HomeAdminState();
@@ -54,7 +57,7 @@ class _HomeAdminState extends State<HomeAdmin> {
           });
         }
       } else {
-         if (mounted) {
+        if (mounted) {
           setState(() {
             _ofertasActivasCount = 0;
             _ofertasCerradasCount = 0;
@@ -62,12 +65,12 @@ class _HomeAdminState extends State<HomeAdmin> {
         }
       }
     } else {
-       if (mounted) {
-          setState(() {
-            _ofertasActivasCount = 0;
-            _ofertasCerradasCount = 0;
-          });
-        }
+      if (mounted) {
+        setState(() {
+          _ofertasActivasCount = 0;
+          _ofertasCerradasCount = 0;
+        });
+      }
     }
   }
 
@@ -91,7 +94,8 @@ class _HomeAdminState extends State<HomeAdmin> {
                 const SizedBox(width: 16.0),
                 Text(
                   '¡Hola, $_adminName!',
-                  style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 20.0, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
               ],
@@ -110,11 +114,13 @@ class _HomeAdminState extends State<HomeAdmin> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Ofertas Totales', textAlign: TextAlign.center),
+                            const Text('Ofertas Totales',
+                                textAlign: TextAlign.center),
                             const SizedBox(height: 8.0),
                             Text(
                               _ofertasActivasCount?.toString() ?? '...',
-                              style: const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 24.0, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -129,11 +135,13 @@ class _HomeAdminState extends State<HomeAdmin> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Ofertas Cerradas', textAlign: TextAlign.center),
+                            const Text('Ofertas Cerradas',
+                                textAlign: TextAlign.center),
                             const SizedBox(height: 8.0),
                             Text(
                               _ofertasCerradasCount?.toString() ?? '...',
-                              style: const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 24.0, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -164,7 +172,8 @@ class _HomeAdminState extends State<HomeAdmin> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const CrearPuestoPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const CrearPuestoPage()),
                 );
               },
             ),

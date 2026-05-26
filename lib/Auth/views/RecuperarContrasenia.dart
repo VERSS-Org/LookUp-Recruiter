@@ -13,10 +13,9 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
 
   void _enviarCorreo() {
     setState(() {
-      mensaje = "Se ha enviado un correo de recuperación a ${emailController.text}";
+      mensaje =
+          "Se ha enviado un correo de recuperación a ${emailController.text}";
     });
-
-
   }
 
   @override
@@ -27,7 +26,8 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -35,13 +35,14 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
             icon: const Icon(Icons.help_outline, color: Colors.black54),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Ingresa tu correo para recibir el enlace de recuperación.')),
+                const SnackBar(
+                    content: Text(
+                        'Ingresa tu correo para recibir el enlace de recuperación.')),
               );
             },
           ),
         ],
       ),
-
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
@@ -67,8 +68,6 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
                 ),
               ),
               const SizedBox(height: 35),
-
-
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -84,18 +83,17 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
                 child: TextField(
                   controller: emailController,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF0A6375)),
+                    prefixIcon: const Icon(Icons.email_outlined,
+                        color: Color(0xFF0A6375)),
                     hintText: "Ingresa tu correo electrónico",
                     hintStyle: const TextStyle(color: Colors.grey),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 15),
                   ),
                 ),
               ),
-
               const SizedBox(height: 30),
-
-
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -117,10 +115,7 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-
               if (mensaje != null)
                 Text(
                   mensaje!,

@@ -26,10 +26,13 @@ class _EditarPerfilState extends State<EditarPerfil> {
   }
 
   void _loadProfileData() {
-    final profileData = Provider.of<ProfileService>(context, listen: false).profileData;
+    final profileData =
+        Provider.of<ProfileService>(context, listen: false).profileData;
     if (profileData != null) {
-      _experiencias = List<Map<String, dynamic>>.from(profileData['experiencias'] ?? []);
-      _educacion = List<Map<String, dynamic>>.from(profileData['educacion'] ?? []);
+      _experiencias =
+          List<Map<String, dynamic>>.from(profileData['experiencias'] ?? []);
+      _educacion =
+          List<Map<String, dynamic>>.from(profileData['educacion'] ?? []);
       _habilidades = List<String>.from(profileData['habilidades'] ?? []);
       _habilidadesController.text = _habilidades.join(', ');
     }
@@ -76,8 +79,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
                       Text(
                         'Experiencia Laboral',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 12),
                       if (_experiencias.isEmpty)
@@ -93,11 +96,14 @@ class _EditarPerfilState extends State<EditarPerfil> {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: ListTile(
-                                leading: Icon(Icons.work, color: Colors.blue[600]),
+                                leading:
+                                    Icon(Icons.work, color: Colors.blue[600]),
                                 title: Text(exp['puesto'] ?? 'Sin título'),
-                                subtitle: Text(exp['empresa'] ?? 'Empresa desconocida'),
+                                subtitle: Text(
+                                    exp['empresa'] ?? 'Empresa desconocida'),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
                                   onPressed: () => _removeExperiencia(index),
                                 ),
                               ),
@@ -108,7 +114,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
                       TextButton.icon(
                         icon: const Icon(Icons.add),
                         label: const Text('Añadir Experiencia'),
-                        onPressed: _isLoading ? null : _mostrarDialogoExperiencia,
+                        onPressed:
+                            _isLoading ? null : _mostrarDialogoExperiencia,
                       ),
                     ],
                   ),
@@ -130,8 +137,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
                       Text(
                         'Educación',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 12),
                       if (_educacion.isEmpty)
@@ -147,11 +154,14 @@ class _EditarPerfilState extends State<EditarPerfil> {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: ListTile(
-                                leading: Icon(Icons.school, color: Colors.teal[600]),
+                                leading:
+                                    Icon(Icons.school, color: Colors.teal[600]),
                                 title: Text(edu['titulo'] ?? 'Sin título'),
-                                subtitle: Text(edu['institucion'] ?? 'Institución desconocida'),
+                                subtitle: Text(edu['institucion'] ??
+                                    'Institución desconocida'),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
                                   onPressed: () => _removeEducacion(index),
                                 ),
                               ),
@@ -184,8 +194,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
                       Text(
                         'Habilidades',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -217,7 +227,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
                               onDeleted: () {
                                 setState(() {
                                   _habilidades.remove(habilidad);
-                                  _habilidadesController.text = _habilidades.join(', ');
+                                  _habilidadesController.text =
+                                      _habilidades.join(', ');
                                 });
                               },
                             );
@@ -240,7 +251,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Icon(Icons.save),
@@ -420,7 +432,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
   void _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       final authService = Provider.of<AuthService>(context, listen: false);
-      final profileService = Provider.of<ProfileService>(context, listen: false);
+      final profileService =
+          Provider.of<ProfileService>(context, listen: false);
 
       final cuentaId = authService.cuentaId;
       if (cuentaId == null) {
@@ -445,7 +458,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
       };
 
       // Usar el método updateProfile disponible
-      bool success = await profileService.updateProfile(cuentaId, profileUpdates);
+      bool success =
+          await profileService.updateProfile(cuentaId, profileUpdates);
 
       setState(() => _isLoading = false);
 

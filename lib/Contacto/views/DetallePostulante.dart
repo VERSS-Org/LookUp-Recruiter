@@ -30,16 +30,17 @@ class _DetallePostulanteState extends State<DetallePostulante> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.postulante["nombre"],
-          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+              color: Colors.black87, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -50,53 +51,48 @@ class _DetallePostulanteState extends State<DetallePostulante> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-
             _buildInfoButton(
               context,
               "Ver Datos de Postulación",
               Icons.description_outlined,
-                  () {
+              () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DatosPostulante(postulante: widget.postulante),
+                    builder: (context) =>
+                        DatosPostulante(postulante: widget.postulante),
                   ),
                 );
               },
             ),
             const SizedBox(height: 10),
-
             _buildInfoButton(
               context,
               "Ver Métricas del Postulante",
               Icons.bar_chart_outlined,
-                  () {
+              () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MetricasPostulante(postulante: widget.postulante),
+                    builder: (context) =>
+                        MetricasPostulante(postulante: widget.postulante),
                   ),
                 );
               },
             ),
-
             const SizedBox(height: 25),
-
             const Text(
               "Gestión de Estado",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             _buildEstadoSelector(),
-
             const SizedBox(height: 25),
-
             const Text(
               "Envío de Feedback",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -114,9 +110,7 @@ class _DetallePostulanteState extends State<DetallePostulante> {
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
-
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -142,11 +136,13 @@ class _DetallePostulanteState extends State<DetallePostulante> {
                     context,
                     MaterialPageRoute(builder: (_) => const ListaPostulantes()),
                   );
-
                 },
                 child: const Text(
                   "Actualizar Postulante",
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -174,7 +170,8 @@ class _DetallePostulanteState extends State<DetallePostulante> {
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
             ),
             const Icon(Icons.chevron_right, color: Colors.grey),
@@ -185,7 +182,13 @@ class _DetallePostulanteState extends State<DetallePostulante> {
   }
 
   Widget _buildEstadoSelector() {
-    final estados = ["Entrevista", "Pendiente", "En revisión", "Logrado", "Rechazo"];
+    final estados = [
+      "Entrevista",
+      "Pendiente",
+      "En revisión",
+      "Logrado",
+      "Rechazo"
+    ];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -196,12 +199,13 @@ class _DetallePostulanteState extends State<DetallePostulante> {
       child: Column(
         children: estados
             .map((estado) => RadioListTile<String>(
-          title: Text(estado),
-          value: estado,
-          groupValue: estadoSeleccionado,
-          activeColor: Colors.blue,
-          onChanged: (value) => setState(() => estadoSeleccionado = value!),
-        ))
+                  title: Text(estado),
+                  value: estado,
+                  groupValue: estadoSeleccionado,
+                  activeColor: Colors.blue,
+                  onChanged: (value) =>
+                      setState(() => estadoSeleccionado = value!),
+                ))
             .toList(),
       ),
     );

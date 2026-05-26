@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/postulacion_service.dart';
 import 'package:lookup_flutter/services/contacto_service.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
+import 'package:lookup_flutter/theme/lookup_theme.dart';
 
 class PuestoCandidatosPage extends StatefulWidget {
   final dynamic puesto;
@@ -16,98 +17,104 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<PostulacionService>(context, listen: false)
-          .fetchPostulacionesPorPuesto(widget.puesto['puesto_id']);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+  }
+
+  Future<void> _refresh() async {
+    await Provider.of<PostulacionService>(context, listen: false)
+        .fetchPostulacionesPorPuesto(widget.puesto['puesto_id']);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Candidatos - ${widget.puesto['titulo']}'),
-        elevation: 2,
-      ),
+      appBar: AppBar(title: Text('Candidatos - ${widget.puesto['titulo']}')),
       body: Consumer3<PostulacionService, AuthService, ContactoService>(
-        builder: (context, postulacionService, authService, contactoService, child) {
+        builder:
+            (context, postulacionService, authService, contactoService, child) {
           if (postulacionService.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           if (postulacionService.postulacionesPuesto.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 56, 18, 28),
                 children: [
-                  Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.inbox_outlined,
+                      size: 64, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
-                  Text(
-                    'No hay candidatos aún',
+                  const Text(
+                    'No hay candidatos aun',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
-                    ),
+                        fontSize: 18, fontWeight: FontWeight.w800, color: kInk),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Los candidatos interesados aparecerán aquí',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    'Los postulantes interesados apareceran aqui.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade700),
                   ),
                 ],
               ),
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: postulacionService.postulacionesPuesto.length,
-            itemBuilder: (context, index) {
-              final postulacion = postulacionService.postulacionesPuesto[index];
-              final estadoActual = (postulacion['estado'] ?? 'pendiente').toString();
-              final estadosDisponibles = _estadoOptions(estadoActual);
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+              itemCount: postulacionService.postulacionesPuesto.length,
+              itemBuilder: (context, index) {
+                final postulacion =
+                    postulacionService.postulacionesPuesto[index];
+                final estadoActual = _canonicalEstado(
+                    (postulacion['estado'] ?? 'pendiente').toString());
+                final estadosDisponibles = _estadoOptions(estadoActual);
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Encabezado con nombre y estado
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: kBrandBlue.withOpacity(0.1),
+                              child: const Icon(Icons.person_outline,
+                                  color: kBrandBlue),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    postulacion['candidato']?['nombre_completo'] ??
-                                    postulacion['candidato_id']?.toString() ?? 'Candidato',
+                                    postulacion['candidato']
+                                            ?['nombre_completo'] ??
+                                        postulacion['candidato_id']
+                                            ?.toString() ??
+                                        'Candidato',
                                     style: const TextStyle(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w800,
+                                      color: kInk,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  if (postulacion['candidato']?['email'] != null)
+                                  if (postulacion['candidato']?['email'] !=
+                                      null)
                                     Text(
                                       postulacion['candidato']['email'],
                                       style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
+                                          fontSize: 13,
+                                          color: Colors.grey.shade700),
                                     ),
                                 ],
                               ),
@@ -115,155 +122,75 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
                             _buildEstadoBadge(estadoActual),
                           ],
                         ),
-                        const SizedBox(height: 16),
-
-                        // Información de fecha
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-                            const SizedBox(width: 8),
-                            Text(
+                        const SizedBox(height: 14),
+                        _InfoLine(
+                          icon: Icons.calendar_today_outlined,
+                          text:
                               'Postulado: ${_formatDate(postulacion['fecha_postulacion'])}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
                         ),
-                        const SizedBox(height: 12),
-
-                        // Documentos adjuntos
                         if (postulacion['documentos_adjuntos'] != null &&
-                            (postulacion['documentos_adjuntos'] as List).isNotEmpty)
-                          Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.attach_file, size: 16, color: Colors.blue[600]),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Documentos: ${(postulacion['documentos_adjuntos'] as List).length}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.blue[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                            ],
+                            (postulacion['documentos_adjuntos'] as List)
+                                .isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          _InfoLine(
+                            icon: Icons.attach_file,
+                            text:
+                                'Documentos: ${(postulacion['documentos_adjuntos'] as List).length}',
                           ),
-
-                        // Hitos/Progreso
+                        ],
                         if (postulacion['hitos'] != null &&
-                            (postulacion['hitos'] as List).isNotEmpty)
-                          Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Últimos Eventos',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey[800],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Column(
-                                      children: (postulacion['hitos'] as List)
-                                          .take(2)
-                                          .map<Widget>((hito) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(bottom: 6.0),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 6,
-                                                height: 6,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.blue,
-                                                  borderRadius: BorderRadius.circular(3),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  hito['descripcion'] ?? 'Evento',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey[700],
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ],
-                                ),
+                            (postulacion['hitos'] as List).isNotEmpty) ...[
+                          const Divider(height: 24),
+                          const Text('Ultimos eventos',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w800, color: kInk)),
+                          const SizedBox(height: 8),
+                          ...(postulacion['hitos'] as List).take(2).map((hito) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: _InfoLine(
+                                icon: Icons.radio_button_checked,
+                                text: hito['descripcion'] ?? 'Evento',
                               ),
-                              const SizedBox(height: 12),
-                            ],
-                          ),
-
-                        // Selector de estado y acciones
+                            );
+                          }),
+                        ],
+                        const Divider(height: 24),
                         Row(
                           children: [
                             Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey[300]!),
-                                  borderRadius: BorderRadius.circular(8),
+                              child: DropdownButtonFormField<String>(
+                                initialValue: estadoActual,
+                                decoration: const InputDecoration(
+                                  labelText: 'Estado',
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
                                 ),
-                                child: DropdownButton<String>(
-                                  isExpanded: true,
-                                  value: estadoActual,
-                                  underline: const SizedBox(),
-                                  items: estadosDisponibles.map<DropdownMenuItem<String>>((String value) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(
-                                        value.replaceAll('_', ' ').toUpperCase(),
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue) {
-                                    if (newValue != null && newValue != estadoActual) {
-                                      _cambiarEstado(
+                                items: estadosDisponibles.map((value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(_estadoLabel(value),
+                                        style: const TextStyle(fontSize: 13)),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  if (newValue != null &&
+                                      newValue != estadoActual) {
+                                    _cambiarEstado(
                                         context,
                                         postulacion['postulacion_id'],
-                                        newValue,
-                                      );
-                                    }
-                                  },
-                                ),
+                                        newValue);
+                                  }
+                                },
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            IconButton(
-                              tooltip: 'Enviar feedback',
-                              icon: const Icon(Icons.message),
+                            const SizedBox(width: 10),
+                            IconButton.filledTonal(
+                              tooltip: 'Abrir contacto',
+                              icon: const Icon(Icons.forum_outlined),
                               onPressed: () {
-                                _mostrarDialogoFeedback(
-                                  context,
-                                  postulacion,
-                                  authService,
-                                  contactoService,
-                                );
+                                _mostrarDialogoContacto(context, postulacion,
+                                    authService, contactoService);
                               },
                             ),
                           ],
@@ -271,33 +198,59 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
                       ],
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),
     );
   }
 
-  /// Widget para mostrar el badge de estado
+  String _canonicalEstado(String estado) =>
+      estado == 'rechazo' ? 'rechazado' : estado;
+
   List<String> _estadoOptions(String estado) {
     const transitions = <String, List<String>>{
-      'pendiente': ['pendiente', 'en_revision', 'entrevista', 'aceptado', 'oferta', 'rechazado', 'rechazo'],
-      'en_revision': ['en_revision', 'entrevista', 'aceptado', 'oferta', 'rechazado', 'rechazo'],
-      'entrevista': ['entrevista', 'aceptado', 'oferta', 'rechazado', 'rechazo'],
-      'aceptado': ['aceptado', 'entrevista', 'oferta', 'rechazado', 'rechazo'],
+      'pendiente': [
+        'pendiente',
+        'en_revision',
+        'entrevista',
+        'aceptado',
+        'oferta',
+        'rechazado'
+      ],
+      'en_revision': [
+        'en_revision',
+        'entrevista',
+        'aceptado',
+        'oferta',
+        'rechazado'
+      ],
+      'entrevista': ['entrevista', 'aceptado', 'oferta', 'rechazado'],
+      'aceptado': ['aceptado', 'entrevista', 'oferta', 'rechazado'],
       'oferta': ['oferta'],
       'rechazado': ['rechazado'],
-      'rechazo': ['rechazo'],
     };
 
     return transitions[estado] ?? <String>[estado];
   }
 
+  String _estadoLabel(String estado) {
+    const labels = {
+      'pendiente': 'PENDIENTE',
+      'en_revision': 'EN REVISION',
+      'entrevista': 'ENTREVISTA',
+      'aceptado': 'ACEPTADO',
+      'oferta': 'OFERTA',
+      'rechazado': 'RECHAZADO',
+    };
+    return labels[estado] ?? estado.replaceAll('_', ' ').toUpperCase();
+  }
+
   Widget _buildEstadoBadge(String estado) {
-    Color color;
-    IconData icon;
+    late Color color;
+    late IconData icon;
 
     switch (estado) {
       case 'pendiente':
@@ -305,12 +258,12 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
         icon = Icons.schedule;
         break;
       case 'en_revision':
-        color = Colors.blue;
-        icon = Icons.visibility;
+        color = kBrandBlue;
+        icon = Icons.visibility_outlined;
         break;
       case 'entrevista':
-        color = Colors.purple;
-        icon = Icons.videocam;
+        color = kSkyBlue;
+        icon = Icons.videocam_outlined;
         break;
       case 'oferta':
         color = Colors.teal;
@@ -318,75 +271,60 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
         break;
       case 'aceptado':
         color = Colors.green;
-        icon = Icons.check_circle;
+        icon = Icons.check_circle_outline;
         break;
       case 'rechazado':
-      case 'rechazo':
-        color = Colors.red;
-        icon = Icons.cancel;
+        color = Colors.redAccent;
+        icon = Icons.cancel_outlined;
         break;
       default:
         color = Colors.grey;
-        icon = Icons.help;
+        icon = Icons.help_outline;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.45)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 6),
+          Icon(icon, color: color, size: 15),
+          const SizedBox(width: 5),
           Text(
-            estado.replaceAll('_', ' ').toUpperCase(),
+            _estadoLabel(estado),
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+                fontSize: 11, fontWeight: FontWeight.w800, color: color),
           ),
         ],
       ),
     );
   }
 
-  /// Cambiar estado de la postulación
-  void _cambiarEstado(BuildContext context, String postulacionId, String nuevoEstado) async {
-    final postulacionService = Provider.of<PostulacionService>(context, listen: false);
+  Future<void> _cambiarEstado(
+      BuildContext context, String postulacionId, String nuevoEstado) async {
+    final postulacionService =
+        Provider.of<PostulacionService>(context, listen: false);
     final puestoId = widget.puesto['puesto_id'];
 
     final success = await postulacionService.updateEstadoPostulacion(
-      postulacionId,
-      nuevoEstado,
-      puestoId,
-    );
+        postulacionId, nuevoEstado, puestoId);
 
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Estado actualizado a: $nuevoEstado'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } else if (!success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error al actualizar el estado'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(success
+            ? 'Estado actualizado a: ${_estadoLabel(nuevoEstado)}'
+            : 'Error al actualizar el estado'),
+        backgroundColor: success ? Colors.green : Colors.red,
+      ),
+    );
   }
 
-  /// Mostrar diálogo para enviar feedback
-  void _mostrarDialogoFeedback(
+  void _mostrarDialogoContacto(
     BuildContext context,
     dynamic postulacion,
     AuthService authService,
@@ -394,7 +332,7 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
   ) {
     showDialog(
       context: context,
-      builder: (context) => _FeedbackDialog(
+      builder: (context) => _ContactoDialog(
         postulacion: postulacion,
         authService: authService,
         contactoService: contactoService,
@@ -403,7 +341,6 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
     );
   }
 
-  /// Formatea fecha a formato legible
   String _formatDate(String? dateString) {
     if (dateString == null) return 'Recientemente';
     try {
@@ -412,30 +349,46 @@ class _PuestoCandidatosPageState extends State<PuestoCandidatosPage> {
       final difference = now.difference(date);
 
       if (difference.inDays == 0) {
-        if (difference.inHours == 0) {
-          return 'Hace ${difference.inMinutes} min';
-        }
+        if (difference.inHours == 0) return 'Hace ${difference.inMinutes} min';
         return 'Hace ${difference.inHours}h';
-      } else if (difference.inDays == 1) {
-        return 'Ayer';
-      } else if (difference.inDays < 7) {
-        return 'Hace ${difference.inDays} días';
       }
+      if (difference.inDays == 1) return 'Ayer';
+      if (difference.inDays < 7) return 'Hace ${difference.inDays} dias';
       return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
+    } catch (_) {
       return 'Recientemente';
     }
   }
 }
 
-/// Diálogo para enviar feedback
-class _FeedbackDialog extends StatefulWidget {
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: kBrandBlue),
+        const SizedBox(width: 8),
+        Expanded(
+            child: Text(text,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade800))),
+      ],
+    );
+  }
+}
+
+class _ContactoDialog extends StatefulWidget {
   final dynamic postulacion;
   final AuthService authService;
   final ContactoService contactoService;
   final String puestoId;
 
-  const _FeedbackDialog({
+  const _ContactoDialog({
     required this.postulacion,
     required this.authService,
     required this.contactoService,
@@ -443,19 +396,21 @@ class _FeedbackDialog extends StatefulWidget {
   });
 
   @override
-  State<_FeedbackDialog> createState() => _FeedbackDialogState();
+  State<_ContactoDialog> createState() => _ContactoDialogState();
 }
 
-class _FeedbackDialogState extends State<_FeedbackDialog> {
-  late String _tipoFeedback;
+class _ContactoDialogState extends State<_ContactoDialog> {
   final _mensajeController = TextEditingController();
   final _motivoController = TextEditingController();
-  bool _isLoading = false;
+  String _tipoFeedback = 'comentario';
+  bool _isLoading = true;
+  bool _isSending = false;
+  List<dynamic> _mensajes = const <dynamic>[];
 
   @override
   void initState() {
     super.initState();
-    _tipoFeedback = 'comentario';
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMessages());
   }
 
   @override
@@ -465,58 +420,94 @@ class _FeedbackDialogState extends State<_FeedbackDialog> {
     super.dispose();
   }
 
+  Future<void> _loadMessages() async {
+    final mensajes = await widget.contactoService
+        .fetchContactos(widget.postulacion['postulacion_id']);
+    if (!mounted) return;
+    setState(() {
+      _mensajes = mensajes;
+      _isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final candidato =
+        widget.postulacion['candidato']?['nombre_completo'] ?? 'Candidato';
+    final dialogWidth = MediaQuery.of(context).size.width > 620
+        ? 540.0
+        : MediaQuery.of(context).size.width * 0.88;
+
     return AlertDialog(
-      title: const Text('Enviar Feedback'),
-      content: SingleChildScrollView(
+      titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      title: Row(
+        children: [
+          const Icon(Icons.forum_outlined, color: kBrandBlue),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Text('Contacto con $candidato',
+                  overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+      content: SizedBox(
+        width: dialogWidth,
+        height: 500,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _mensajes.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Aun no hay mensajes para esta postulacion.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey.shade700),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _mensajes.length,
+                          itemBuilder: (context, index) =>
+                              _MessageBubble(contacto: _mensajes[index]),
+                        ),
+            ),
+            const Divider(height: 18),
             DropdownButtonFormField<String>(
               initialValue: _tipoFeedback,
-              decoration: InputDecoration(
-                labelText: 'Tipo de Feedback',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              items: <String>['aprobacion', 'rechazo', 'comentario', 'otro']
-                  .map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value.toUpperCase()),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() => _tipoFeedback = newValue);
-                }
+              decoration: const InputDecoration(labelText: 'Tipo de mensaje'),
+              items: const [
+                DropdownMenuItem(
+                    value: 'comentario', child: Text('Comentario')),
+                DropdownMenuItem(
+                    value: 'aprobacion', child: Text('Aprobacion')),
+                DropdownMenuItem(value: 'rechazo', child: Text('Rechazo')),
+                DropdownMenuItem(value: 'otro', child: Text('Otro')),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _tipoFeedback = value);
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             TextField(
               controller: _mensajeController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Mensaje',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                hintText: 'Escribe tu mensaje...',
+                hintText: 'Escribe una actualizacion para el postulante',
               ),
+              minLines: 2,
               maxLines: 3,
             ),
             if (_tipoFeedback == 'rechazo') ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               TextField(
                 controller: _motivoController,
-                decoration: InputDecoration(
-                  labelText: 'Motivo del Rechazo',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  hintText: 'Explica por qué no fue seleccionado...',
+                decoration: const InputDecoration(
+                  labelText: 'Motivo del rechazo',
+                  hintText: 'Indica el motivo para cerrar el proceso',
                 ),
+                minLines: 1,
                 maxLines: 2,
               ),
             ],
@@ -525,27 +516,33 @@ class _FeedbackDialogState extends State<_FeedbackDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _enviarFeedback,
-          child: _isLoading
+            onPressed: _isSending ? null : () => Navigator.pop(context),
+            child: const Text('Cerrar')),
+        FilledButton.icon(
+          onPressed: _isSending ? null : _enviarMensaje,
+          icon: _isSending
               ? const SizedBox(
-                  height: 16,
                   width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Enviar'),
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.send_outlined),
+          label: const Text('Enviar'),
         ),
       ],
     );
   }
 
-  void _enviarFeedback() async {
-    if (_mensajeController.text.isEmpty) {
+  Future<void> _enviarMensaje() async {
+    if (_mensajeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor escribe un mensaje')),
+        const SnackBar(content: Text('Escribe un mensaje antes de enviar')),
+      );
+      return;
+    }
+
+    if (_tipoFeedback == 'rechazo' && _motivoController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Indica el motivo del rechazo')),
       );
       return;
     }
@@ -555,41 +552,131 @@ class _FeedbackDialogState extends State<_FeedbackDialog> {
         ? candidato['cuenta_id']?.toString()
         : widget.postulacion['candidato_id']?.toString();
 
-    if (candidatoId == null || candidatoId.isEmpty) {
+    if (candidatoId == null ||
+        candidatoId.isEmpty ||
+        widget.authService.cuentaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se pudo identificar al postulante')),
       );
       return;
     }
 
-    setState(() => _isLoading = true);
-
+    setState(() => _isSending = true);
     final success = await widget.contactoService.enviarFeedback(
       postulacionId: widget.postulacion['postulacion_id'],
       empresaId: widget.authService.cuentaId!,
       cuentaId: candidatoId,
       tipoFeedback: _tipoFeedback,
-      mensajeTexto: _mensajeController.text,
-      motivoRechazo: _tipoFeedback == 'rechazo' ? _motivoController.text : null,
+      mensajeTexto: _mensajeController.text.trim(),
+      motivoRechazo:
+          _tipoFeedback == 'rechazo' ? _motivoController.text.trim() : null,
     );
 
-    setState(() => _isLoading = false);
+    if (!mounted) return;
+    setState(() => _isSending = false);
 
-    if (success && mounted) {
-      Navigator.pop(context);
+    if (success) {
+      _mensajeController.clear();
+      _motivoController.clear();
+      await _loadMessages();
+      if (!mounted) return;
+      await Provider.of<PostulacionService>(context, listen: false)
+          .fetchPostulacionesPorPuesto(widget.puestoId);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Feedback enviado correctamente'),
-          backgroundColor: Colors.green,
-        ),
+            content: Text('Mensaje enviado'), backgroundColor: Colors.green),
       );
-    } else if (mounted) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.contactoService.errorMessage ?? 'Error al enviar'),
+          content: Text(
+              widget.contactoService.errorMessage ?? 'Error al enviar mensaje'),
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+}
+
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.contacto});
+
+  final dynamic contacto;
+
+  @override
+  Widget build(BuildContext context) {
+    final feedback = contacto is Map ? contacto['ultimo_feedback'] : null;
+    final feedbackMap = feedback is Map ? feedback : const <String, dynamic>{};
+    final tipo = feedbackMap['tipo']?.toString() ?? 'comentario';
+    final mensaje = feedbackMap['mensaje']?.toString() ??
+        'La empresa envio una actualizacion.';
+    final motivo = feedbackMap['motivo_rechazo']?.toString();
+    final fecha = contacto is Map ? contacto['fecha_hora']?.toString() : null;
+
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        width: MediaQuery.of(context).size.width > 620 ? 420 : null,
+        margin: const EdgeInsets.only(bottom: 10, left: 36),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: kBrandBlue.withOpacity(0.08),
+          border: Border.all(color: kBrandBlue.withOpacity(0.16)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(8),
+            topRight: Radius.circular(8),
+            bottomLeft: Radius.circular(8),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(_tipoLabel(tipo),
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: kBrandBlue)),
+                const Spacer(),
+                if (fecha != null)
+                  Text(_shortDate(fecha),
+                      style:
+                          TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(mensaje, style: const TextStyle(color: kInk)),
+            if (motivo != null && motivo.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Motivo: $motivo',
+                  style: TextStyle(
+                      color: Colors.grey.shade800,
+                      fontStyle: FontStyle.italic)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _tipoLabel(String tipo) {
+    const labels = {
+      'comentario': 'COMENTARIO',
+      'aprobacion': 'APROBACION',
+      'rechazo': 'RECHAZO',
+      'otro': 'OTRO',
+    };
+    return labels[tipo] ?? tipo.toUpperCase();
+  }
+
+  String _shortDate(String raw) {
+    try {
+      final date = DateTime.parse(raw);
+      return '${date.day}/${date.month} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return '';
     }
   }
 }

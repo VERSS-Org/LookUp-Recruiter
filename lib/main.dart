@@ -11,6 +11,7 @@ import 'package:lookup_flutter/Auth/views/Registro.dart';
 import 'package:lookup_flutter/Auth/views/RecuperarContrasenia.dart';
 import 'package:lookup_flutter/BarraNavegacion.dart';
 import 'package:lookup_flutter/Puesto/views/GestionarOfertas.dart';
+import 'package:lookup_flutter/theme/lookup_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,8 +36,9 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'LookUp',
+            theme: buildLookUpTheme(),
             // Define la pantalla de arranque
-            home: const Login(), 
+            home: const Login(),
             // Define las rutas nombradas de la aplicación
             routes: {
               '/home': (context) => const BarraNavegacion(),

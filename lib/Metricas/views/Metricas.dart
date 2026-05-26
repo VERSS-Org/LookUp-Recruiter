@@ -30,14 +30,11 @@ class _MetricasState extends State<Metricas> {
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
             const SizedBox(height: 20),
-
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -47,14 +44,14 @@ class _MetricasState extends State<Metricas> {
               children: [
                 _buildMetricCard("Postulaciones totales recibidas",
                     metricasEmpresa["postulaciones"].toString(), Colors.blue),
-                _buildMetricCard(
-                    "Aceptadas", metricasEmpresa["aceptadas"].toString(), Colors.green),
-                _buildMetricCard(
-                    "Rechazadas", metricasEmpresa["rechazadas"].toString(), Colors.red),
-                _buildMetricCard(
-                    "Ofertas activas", metricasEmpresa["activas"].toString(), Colors.blueGrey),
-                _buildMetricCard(
-                    "Nuevas hoy", metricasEmpresa["nuevas"].toString(), Colors.black),
+                _buildMetricCard("Aceptadas",
+                    metricasEmpresa["aceptadas"].toString(), Colors.green),
+                _buildMetricCard("Rechazadas",
+                    metricasEmpresa["rechazadas"].toString(), Colors.red),
+                _buildMetricCard("Ofertas activas",
+                    metricasEmpresa["activas"].toString(), Colors.blueGrey),
+                _buildMetricCard("Nuevas hoy",
+                    metricasEmpresa["nuevas"].toString(), Colors.black),
                 _buildMetricCard("Pendientes de revisión",
                     metricasEmpresa["pendientes"].toString(), Colors.orange),
               ],

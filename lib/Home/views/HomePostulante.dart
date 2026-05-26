@@ -24,7 +24,8 @@ class HomePostulante extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Aquí irá el contenido para el postulante
-            const Text('Bienvenido, Postulante', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text('Bienvenido, Postulante',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             _buildQuickAccess(
               'Ver mis postulaciones',
@@ -37,7 +38,8 @@ class HomePostulante extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickAccess(String text, IconData icon, {required VoidCallback onTap}) {
+  Widget _buildQuickAccess(String text, IconData icon,
+      {required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -54,7 +56,8 @@ class HomePostulante extends StatelessWidget {
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
             ),
             const Icon(Icons.chevron_right, color: Colors.grey),

@@ -21,9 +21,12 @@ class HomePage extends StatelessWidget {
     final authService = Provider.of<AuthService>(context);
 
     if (authService.role == 'postulante') {
-      return HomePostulante(onNavigateToPostulaciones: onNavigateToPostulaciones);
+      return HomePostulante(
+          onNavigateToPostulaciones: onNavigateToPostulaciones);
     } else if (authService.role == 'empresa') {
-      return HomeEmpresa(onNavigateToProfile: onNavigateToProfile, onNavigateToOfertas: onNavigateToOfertas);
+      return HomeEmpresa(
+          onNavigateToProfile: onNavigateToProfile,
+          onNavigateToOfertas: onNavigateToOfertas);
     } else {
       // Fallback a una vista genérica o de carga
       return const Scaffold(

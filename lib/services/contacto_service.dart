@@ -7,9 +7,12 @@ class ContactoService with ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
+  final Map<String, List<dynamic>> _contactosPorPostulacion = {};
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  List<dynamic> contactosFor(String postulacionId) =>
+      _contactosPorPostulacion[postulacionId] ?? const <dynamic>[];
 
   void _setLoading(bool loading) {
     if (_isLoading != loading) {
@@ -20,6 +23,27 @@ class ContactoService with ChangeNotifier {
 
   void _setError(String? message) {
     _errorMessage = message;
+  }
+
+  Future<List<dynamic>> fetchContactos(String postulacionId) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      final response =
+          await _apiService.get('contacto/?postulacion_id=$postulacionId');
+      final contactos = response is List ? response : <dynamic>[];
+      _contactosPorPostulacion[postulacionId] = contactos;
+      notifyListeners();
+      return contactos;
+    } catch (e) {
+      _setError('Error al cargar contactos: $e');
+      debugPrint('Error fetching contacts: $e');
+      _contactosPorPostulacion[postulacionId] = <dynamic>[];
+      notifyListeners();
+      return const <dynamic>[];
+    } finally {
+      _setLoading(false);
+    }
   }
 
   /// Enviar feedback sobre una postulación
@@ -46,6 +70,7 @@ class ContactoService with ChangeNotifier {
       final response = await _apiService.post('contacto/feedback', payload);
 
       if (response != null && response['feedback_id'] != null) {
+        await fetchContactos(postulacionId);
         return true;
       }
       _setError('Error al enviar feedback.');

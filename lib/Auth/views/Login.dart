@@ -35,10 +35,11 @@ class LoginState extends State<Login> {
 
         if (rol == 'empresa') {
           // Empresas van a Home para gestionar puestos
-          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/home', (route) => false);
         } else {
           // Si no es empresa, no se permite el login
-           setState(() {
+          setState(() {
             _errorMessage = 'Solo se permite el acceso a cuentas de empresa.';
             _isLoading = false;
           });
@@ -103,7 +104,10 @@ class LoginState extends State<Login> {
                         ),
                       ),
                       keyboardType: TextInputType.emailAddress,
-                      validator: (value) => (value == null || !value.contains('@')) ? 'Correo inválido' : null,
+                      validator: (value) =>
+                          (value == null || !value.contains('@'))
+                              ? 'Correo inválido'
+                              : null,
                       onSaved: (value) => _email = value!,
                       enabled: !_isLoading,
                     ),
@@ -117,7 +121,9 @@ class LoginState extends State<Login> {
                         ),
                       ),
                       obscureText: true,
-                      validator: (value) => (value == null || value.length < 6) ? 'La contraseña es muy corta' : null,
+                      validator: (value) => (value == null || value.length < 6)
+                          ? 'La contraseña es muy corta'
+                          : null,
                       onSaved: (value) => _password = value!,
                       enabled: !_isLoading,
                     ),
@@ -158,7 +164,8 @@ class LoginState extends State<Login> {
                       ),
                       child: const Text(
                         'Iniciar Sesión',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                     ),
               const SizedBox(height: 20),

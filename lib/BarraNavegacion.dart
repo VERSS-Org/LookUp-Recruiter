@@ -6,6 +6,7 @@ import 'package:lookup_flutter/Postulacion/views/PostulacionPage.dart';
 import 'package:lookup_flutter/Postulacion/views/MisPostulacionesPage.dart';
 import 'package:lookup_flutter/Perfil/views/PerfilPage.dart';
 import 'package:lookup_flutter/Puesto/views/GestionarOfertas.dart';
+import 'package:lookup_flutter/theme/lookup_theme.dart';
 
 class BarraNavegacion extends StatefulWidget {
   const BarraNavegacion({super.key});
@@ -43,11 +44,19 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
 
     // Construir items de navegación basado en el rol
     final List<BottomNavigationBarItem> items = [
-      const BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Inicio'),
-      if (isPostulante) const BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Ofertas'),
-      if (!isPostulante) const BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Ofertas'),
-      if (isPostulante) const BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Mis Postulaciones'),
-      const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
+      const BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined), label: 'Inicio'),
+      if (isPostulante)
+        const BottomNavigationBarItem(
+            icon: Icon(Icons.work_outline), label: 'Ofertas'),
+      if (!isPostulante)
+        const BottomNavigationBarItem(
+            icon: Icon(Icons.work_outline), label: 'Ofertas'),
+      if (isPostulante)
+        const BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined), label: 'Mis Postulaciones'),
+      const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline), label: 'Perfil'),
     ];
 
     // Validar que currentIndex esté dentro del rango válido
@@ -57,13 +66,23 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
 
     return Scaffold(
       body: screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: _navigateTo,
-        items: items,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: _navigateTo,
+        indicatorColor: kBrandBlue.withOpacity(0.12),
+        destinations: items.map((item) {
+          return NavigationDestination(
+            icon: IconTheme(
+              data: const IconThemeData(color: kInk),
+              child: item.icon,
+            ),
+            selectedIcon: IconTheme(
+              data: const IconThemeData(color: kBrandBlue),
+              child: item.icon,
+            ),
+            label: item.label ?? '',
+          );
+        }).toList(),
       ),
     );
   }
