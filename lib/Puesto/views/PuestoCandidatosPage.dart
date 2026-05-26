@@ -613,20 +613,27 @@ class _MessageBubble extends StatelessWidget {
         'La empresa envio una actualizacion.';
     final motivo = feedbackMap['motivo_rechazo']?.toString();
     final fecha = contacto is Map ? contacto['fecha_hora']?.toString() : null;
+    final isCompany = contacto is Map &&
+        (contacto['remitente_rol']?.toString() ?? 'empresa') == 'empresa';
 
     return Align(
-      alignment: Alignment.centerRight,
+      alignment: isCompany ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         width: MediaQuery.of(context).size.width > 620 ? 420 : null,
-        margin: const EdgeInsets.only(bottom: 10, left: 36),
+        margin: EdgeInsets.only(
+          bottom: 10,
+          left: isCompany ? 36 : 0,
+          right: isCompany ? 0 : 36,
+        ),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: kBrandBlue.withOpacity(0.08),
-          border: Border.all(color: kBrandBlue.withOpacity(0.16)),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(8),
-            topRight: Radius.circular(8),
-            bottomLeft: Radius.circular(8),
+          color: isCompany ? kBrandBlue.withValues(alpha: 0.08) : Colors.white,
+          border: Border.all(color: kBrandBlue.withValues(alpha: 0.16)),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(8),
+            topRight: const Radius.circular(8),
+            bottomLeft: Radius.circular(isCompany ? 8 : 0),
+            bottomRight: Radius.circular(isCompany ? 0 : 8),
           ),
         ),
         child: Column(
