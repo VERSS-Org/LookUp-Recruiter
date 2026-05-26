@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 const Color kBrandBlue = Color(0xFF28348A);
 const Color kBrandBlueAlt = Color(0xFF3A4BC4);
@@ -31,6 +32,22 @@ List<BoxShadow> softShadow({
   ];
 }
 
+/// Estilo tipografico breve para titulos de seccion en pantallas internas.
+TextStyle kSectionTitleStyle = GoogleFonts.plusJakartaSans(
+  fontSize: 18,
+  fontWeight: FontWeight.w800,
+  color: kInk,
+  letterSpacing: -0.2,
+);
+
+/// Estilo tipografico para etiquetas de campo y leyendas muted.
+TextStyle kLabelStyle = GoogleFonts.plusJakartaSans(
+  fontSize: 13,
+  fontWeight: FontWeight.w600,
+  color: kInkMuted,
+  letterSpacing: 0.1,
+);
+
 ThemeData buildLookUpTheme() {
   final base = ThemeData(
     useMaterial3: true,
@@ -43,24 +60,28 @@ ThemeData buildLookUpTheme() {
     scaffoldBackgroundColor: kSurface,
   );
 
-  return base.copyWith(
-    textTheme: base.textTheme
-        .apply(bodyColor: kInk, displayColor: kInk)
-        .copyWith(
-          titleLarge: base.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.2,
-          ),
-          bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.35),
+  final textTheme = GoogleFonts.plusJakartaSansTextTheme(base.textTheme)
+      .apply(bodyColor: kInk, displayColor: kInk)
+      .copyWith(
+        titleLarge: GoogleFonts.plusJakartaSans(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.3,
+          color: kInk,
         ),
-    appBarTheme: const AppBarTheme(
+        bodyMedium: GoogleFonts.plusJakartaSans(height: 1.35, color: kInk),
+      );
+
+  return base.copyWith(
+    textTheme: textTheme,
+    primaryTextTheme: textTheme,
+    appBarTheme: AppBarTheme(
       backgroundColor: Colors.white,
       foregroundColor: kInk,
       surfaceTintColor: Colors.white,
       centerTitle: true,
       elevation: 0,
       scrolledUnderElevation: 0.5,
-      titleTextStyle: TextStyle(
+      titleTextStyle: GoogleFonts.plusJakartaSans(
         color: kInk,
         fontSize: 18,
         fontWeight: FontWeight.w800,
@@ -82,7 +103,7 @@ ThemeData buildLookUpTheme() {
         minimumSize: const Size.fromHeight(52),
         elevation: 2,
         shadowColor: kBrandBlue.withValues(alpha: 0.45),
-        textStyle: const TextStyle(
+        textStyle: GoogleFonts.plusJakartaSans(
           fontSize: 15,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.2,
@@ -95,7 +116,10 @@ ThemeData buildLookUpTheme() {
         backgroundColor: kBrandBlue,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        textStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
@@ -104,21 +128,27 @@ ThemeData buildLookUpTheme() {
         foregroundColor: kBrandBlue,
         minimumSize: const Size.fromHeight(50),
         side: BorderSide(color: kBrandBlue.withValues(alpha: 0.35), width: 1.4),
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        textStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: kBrandBlue,
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        textStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: kBrandBlue,
       foregroundColor: Colors.white,
       elevation: 4,
-      extendedTextStyle: const TextStyle(
+      extendedTextStyle: GoogleFonts.plusJakartaSans(
         fontSize: 15,
         fontWeight: FontWeight.w700,
       ),
@@ -128,8 +158,12 @@ ThemeData buildLookUpTheme() {
       filled: true,
       fillColor: kFieldFill,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      hintStyle: const TextStyle(color: kInkMuted),
-      labelStyle: const TextStyle(color: kInkMuted),
+      hintStyle: GoogleFonts.plusJakartaSans(color: kInkMuted),
+      labelStyle: GoogleFonts.plusJakartaSans(color: kInkMuted),
+      floatingLabelStyle: GoogleFonts.plusJakartaSans(
+        color: kBrandBlue,
+        fontWeight: FontWeight.w600,
+      ),
       prefixIconColor: kInkMuted,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -158,7 +192,7 @@ ThemeData buildLookUpTheme() {
       indicatorColor: kBrandBlue.withValues(alpha: 0.12),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => TextStyle(
+        (states) => GoogleFonts.plusJakartaSans(
           fontSize: 11.5,
           fontWeight: states.contains(WidgetState.selected)
               ? FontWeight.w700
@@ -176,14 +210,14 @@ ThemeData buildLookUpTheme() {
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: kInk,
-      contentTextStyle: const TextStyle(color: Colors.white),
+      contentTextStyle: GoogleFonts.plusJakartaSans(color: Colors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      titleTextStyle: const TextStyle(
+      titleTextStyle: GoogleFonts.plusJakartaSans(
         color: kInk,
         fontSize: 18,
         fontWeight: FontWeight.w800,
@@ -191,5 +225,54 @@ ThemeData buildLookUpTheme() {
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: kBrandBlue),
     listTileTheme: const ListTileThemeData(iconColor: kBrandBlue),
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: kInk,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      textStyle: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 12),
+    ),
   );
+}
+
+/// Widget reutilizable: titulo de seccion con punto acento y accion opcional.
+class SectionLabel extends StatelessWidget {
+  const SectionLabel({
+    super.key,
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, right: 2, top: 4, bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 18,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              gradient: kBrandGradient,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          Expanded(
+            child: Text(title, style: kSectionTitleStyle),
+          ),
+          if (actionLabel != null)
+            TextButton(
+              onPressed: onAction,
+              child: Text(actionLabel!),
+            ),
+        ],
+      ),
+    );
+  }
 }

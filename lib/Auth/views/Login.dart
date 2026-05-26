@@ -57,6 +57,11 @@ class LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final formWidth = viewportWidth < 700
+        ? (viewportWidth - 128).clamp(280, 320).toDouble()
+        : 440.0;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -69,9 +74,10 @@ class LoginState extends State<Login> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24),
+              child: SizedBox(
+                width: formWidth,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,

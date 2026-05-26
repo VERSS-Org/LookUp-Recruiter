@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
 import 'package:lookup_flutter/services/profile_service.dart';
@@ -85,7 +88,7 @@ class _PerfilPageState extends State<PerfilPage> {
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
                         icon: const Icon(Icons.photo_camera_outlined),
-                        label: const Text('Cambiar foto'),
+                        label: const Text('Subir foto'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: BorderSide(
@@ -95,16 +98,14 @@ class _PerfilPageState extends State<PerfilPage> {
                           minimumSize: const Size(0, 44),
                           padding: const EdgeInsets.symmetric(horizontal: 18),
                         ),
-                        onPressed: () => _showPhotoDialog(
-                            context,
-                            authService,
-                            profileService,
-                            profile['foto_url']?.toString()),
+                        onPressed: () => _showPhotoDialog(context, authService,
+                            profileService, profile['foto_url']?.toString()),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 22),
+                const SectionLabel(title: 'Detalles de la cuenta'),
                 InfoCard(
                     icon: Icons.email_outlined,
                     title: 'Correo Electronico',
@@ -119,7 +120,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     icon: Icons.fingerprint,
                     title: 'ID de cuenta',
                     content: authService.cuentaId ?? 'No disponible'),
-                const SizedBox(height: 18),
+                const SizedBox(height: 22),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.logout),
                   label: const Text('Cerrar sesion'),
@@ -141,8 +142,10 @@ class _PerfilPageState extends State<PerfilPage> {
     ProfileService profileService,
     String? currentUrl,
   ) async {
-    final controller = TextEditingController(text: currentUrl ?? '');
-    final formKey = GlobalKey<FormState>();
+    final picker = ImagePicker();
+    XFile? selectedImage;
+    Uint8List? previewBytes;
+    String? errorMessage;
 
     await showDialog(
       context: context,
@@ -151,27 +154,79 @@ class _PerfilPageState extends State<PerfilPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Cambiar foto'),
-              content: Form(
-                key: formKey,
-                child: TextFormField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    labelText: 'URL de imagen',
-                    hintText: 'https://...',
-                    prefixIcon: Icon(Icons.link),
-                  ),
-                  validator: (value) {
-                    final trimmed = value?.trim() ?? '';
-                    if (trimmed.isEmpty) return null;
-                    final uri = Uri.tryParse(trimmed);
-                    if (uri == null ||
-                        uri.host.isEmpty ||
-                        !(uri.scheme == 'http' || uri.scheme == 'https')) {
-                      return 'Ingresa una URL valida';
-                    }
-                    return null;
-                  },
+              title: const Text('Subir foto de perfil'),
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 380),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 52,
+                      backgroundColor: kBrandBlue.withValues(alpha: 0.12),
+                      backgroundImage: previewBytes != null
+                          ? MemoryImage(previewBytes!)
+                          : (currentUrl != null && currentUrl.trim().isNotEmpty
+                              ? NetworkImage(currentUrl.trim())
+                              : null) as ImageProvider?,
+                      child: previewBytes == null &&
+                              (currentUrl == null || currentUrl.trim().isEmpty)
+                          ? const Icon(
+                              Icons.business,
+                              color: kBrandBlue,
+                              size: 44,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 18),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.upload_file_outlined),
+                      label: Text(
+                        selectedImage == null
+                            ? 'Seleccionar imagen'
+                            : 'Cambiar seleccion',
+                      ),
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final picked = await picker.pickImage(
+                                source: ImageSource.gallery,
+                                maxWidth: 1200,
+                                imageQuality: 86,
+                              );
+                              if (picked == null) return;
+                              final bytes = await picked.readAsBytes();
+                              if (bytes.length > 3 * 1024 * 1024) {
+                                setDialogState(() {
+                                  errorMessage =
+                                      'La imagen no debe superar 3 MB.';
+                                });
+                                return;
+                              }
+                              setDialogState(() {
+                                selectedImage = picked;
+                                previewBytes = bytes;
+                                errorMessage = null;
+                              });
+                            },
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Formatos admitidos: JPG, PNG, WEBP o GIF.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: kInkMuted, fontSize: 12),
+                    ),
+                    if (errorMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               actions: [
@@ -184,20 +239,29 @@ class _PerfilPageState extends State<PerfilPage> {
                   onPressed: isSaving
                       ? null
                       : () async {
-                          if (!formKey.currentState!.validate() ||
-                              authService.cuentaId == null) {
+                          if (selectedImage == null) {
+                            setDialogState(() {
+                              errorMessage = 'Selecciona una imagen primero.';
+                            });
+                            return;
+                          }
+                          if (authService.cuentaId == null) {
                             return;
                           }
                           setDialogState(() => isSaving = true);
-                          final url = controller.text.trim();
-                          final success = await profileService
-                              .updateProfile(authService.cuentaId!, {
-                            'foto_url': url.isEmpty ? null : url,
-                          });
+                          final success =
+                              await profileService.uploadProfilePhoto(
+                            authService.cuentaId!,
+                            selectedImage!,
+                          );
                           if (!dialogContext.mounted) return;
                           setDialogState(() => isSaving = false);
                           if (success) {
                             Navigator.pop(dialogContext);
+                          } else {
+                            setDialogState(() {
+                              errorMessage = 'No se pudo subir la foto.';
+                            });
                           }
                         },
                   child: isSaving
@@ -213,7 +277,6 @@ class _PerfilPageState extends State<PerfilPage> {
         );
       },
     );
-    controller.dispose();
   }
 
   void _showLogoutDialog(BuildContext context, AuthService authService) {

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
 
 class ProfileService with ChangeNotifier {
@@ -58,6 +59,25 @@ class ProfileService with ChangeNotifier {
       return false;
     } catch (e) {
       debugPrint('Error updating profile: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> uploadProfilePhoto(String cuentaId, XFile file) async {
+    _setLoading(true);
+    try {
+      final response = await _apiService.uploadFile(
+          'iam/cuenta/$cuentaId/foto', 'file', file);
+      if (response is Map<String, dynamic>) {
+        _profileData = response;
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error uploading profile photo: $e');
       return false;
     } finally {
       _setLoading(false);

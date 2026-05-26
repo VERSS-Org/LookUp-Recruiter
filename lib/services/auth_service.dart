@@ -18,9 +18,13 @@ class AuthService with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _token != null;
 
+  AuthService() {
+    _apiService.setRefreshTokenHandler(refreshAccessToken);
+  }
+
   Future<bool> tryAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey('token')) {
+    if (!prefs.containsKey('token') || !prefs.containsKey('cuentaId')) {
       return false;
     }
     _token = prefs.getString('token');
@@ -28,8 +32,21 @@ class AuthService with ChangeNotifier {
     _role = prefs.getString('role');
     _cuentaId = prefs.getString('cuentaId');
     _apiService.setToken(_token);
-    notifyListeners();
-    return true;
+
+    final loaded = await _loadCurrentAccount();
+    if (loaded) {
+      notifyListeners();
+      return true;
+    }
+
+    final refreshed = await refreshAccessToken();
+    if (refreshed && await _loadCurrentAccount()) {
+      notifyListeners();
+      return true;
+    }
+
+    await logout();
+    return false;
   }
 
   Future<void> _saveCredentials(
@@ -156,9 +173,11 @@ class AuthService with ChangeNotifier {
     }
 
     try {
-      final response = await _apiService.post('iam/refresh-token', {
-        'refresh_token': _refreshToken,
-      });
+      final response = await _apiService.post(
+        'iam/refresh-token',
+        {'refresh_token': _refreshToken},
+        retryOnUnauthorized: false,
+      );
 
       if (response != null && response['access_token'] != null) {
         final newToken = response['access_token'];
@@ -174,6 +193,24 @@ class AuthService with ChangeNotifier {
       return false;
     } catch (e) {
       debugPrint('Token refresh error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _loadCurrentAccount() async {
+    try {
+      final response = await _apiService.get('iam/me');
+      if (response is! Map<String, dynamic>) return false;
+
+      _cuentaId = response['cuenta_id']?.toString() ?? _cuentaId;
+      _role = response['rol']?.toString() ?? _role;
+
+      final prefs = await SharedPreferences.getInstance();
+      if (_cuentaId != null) await prefs.setString('cuentaId', _cuentaId!);
+      if (_role != null) await prefs.setString('role', _role!);
+      return true;
+    } catch (e) {
+      debugPrint('Stored session is not valid: $e');
       return false;
     }
   }

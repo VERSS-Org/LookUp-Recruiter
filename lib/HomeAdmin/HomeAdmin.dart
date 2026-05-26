@@ -81,125 +81,162 @@ class _HomeAdminState extends State<HomeAdmin> {
       appBar: AppBar(
         title: const Text('Inicio del Administrador'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: kBrandGradient,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: softShadow(opacity: 0.30, blur: 28, y: 14),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      width: 1.5,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 980),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: kBrandGradient,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: softShadow(opacity: 0.30, blur: 28, y: 14),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(Icons.business, color: Colors.white),
                     ),
-                  ),
-                  child: const Icon(Icons.business, color: Colors.white),
+                    const SizedBox(width: 16.0),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '¡Hola, $_adminName!',
+                            style: const TextStyle(
+                              fontSize: 20.0,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Panel de gestion de tu empresa',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.88),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              const SizedBox(height: 24.0),
+              const SectionLabel(title: 'Resumen'),
+
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final cards = [
+                    _StatCard(
+                      label: 'Ofertas activas',
+                      value: _ofertasActivasCount?.toString() ?? '...',
+                      icon: Icons.work_outline,
+                      color: kBrandBlue,
+                    ),
+                    _StatCard(
+                      label: 'Ofertas cerradas',
+                      value: _ofertasCerradasCount?.toString() ?? '...',
+                      icon: Icons.check_circle_outline,
+                      color: kSkyBlue,
+                    ),
+                  ];
+
+                  if (constraints.maxWidth < 560) {
+                    return Column(
+                      children: [
+                        cards[0],
+                        const SizedBox(height: 12),
+                        cards[1],
+                      ],
+                    );
+                  }
+
+                  return IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: cards[0]),
+                        const SizedBox(width: 14),
+                        Expanded(child: cards[1]),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 26.0),
+
+              // Quick actions
+              const SectionLabel(title: 'Acceso Rápido'),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final actions = [
+                    _QuickAction(
+                      icon: Icons.work,
+                      color: kBrandBlue,
+                      title: 'Gestionar ofertas',
+                      onTap: widget.onNavigateToOfertas,
+                    ),
+                    _QuickAction(
+                      icon: Icons.add_circle,
+                      color: kSkyBlue,
+                      title: 'Crear nueva oferta',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const CrearPuestoPage()),
+                        );
+                      },
+                    ),
+                    _QuickAction(
+                      icon: Icons.business,
+                      color: kBrandBlue,
+                      title: 'Perfil de empresa',
+                      onTap: widget.onNavigateToProfile,
+                    ),
+                  ];
+
+                  if (constraints.maxWidth < 720) {
+                    return Column(
+                      children: [
+                        actions[0],
+                        const SizedBox(height: 12),
+                        actions[1],
+                        const SizedBox(height: 12),
+                        actions[2],
+                      ],
+                    );
+                  }
+
+                  return Row(
                     children: [
-                      Text(
-                        '¡Hola, $_adminName!',
-                        style: const TextStyle(
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Panel de gestion de tu empresa',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.88),
-                        ),
-                      ),
+                      Expanded(child: actions[0]),
+                      const SizedBox(width: 12),
+                      Expanded(child: actions[1]),
+                      const SizedBox(width: 12),
+                      Expanded(child: actions[2]),
                     ],
-                  ),
-                ),
-              ],
-            ),
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 20.0),
-
-          // Stats cards
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    label: 'Ofertas activas',
-                    value: _ofertasActivasCount?.toString() ?? '...',
-                    icon: Icons.work_outline,
-                    color: kBrandBlue,
-                  ),
-                ),
-                const SizedBox(width: 14.0),
-                Expanded(
-                  child: _StatCard(
-                    label: 'Ofertas Cerradas',
-                    value: _ofertasCerradasCount?.toString() ?? '...',
-                    icon: Icons.check_circle_outline,
-                    color: kSkyBlue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28.0),
-
-          // Quick actions
-          const Text(
-            'Acceso Rápido',
-            style: TextStyle(
-              fontSize: 18.0,
-              fontWeight: FontWeight.w800,
-              color: kInk,
-            ),
-          ),
-          const SizedBox(height: 14.0),
-          _QuickAction(
-            icon: Icons.work,
-            color: kBrandBlue,
-            title: 'Gestionar Ofertas',
-            onTap: widget.onNavigateToOfertas,
-          ),
-          const SizedBox(height: 12),
-          _QuickAction(
-            icon: Icons.add_circle,
-            color: kSkyBlue,
-            title: 'Crear Nueva Oferta',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const CrearPuestoPage()),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _QuickAction(
-            icon: Icons.business,
-            color: kBrandBlue,
-            title: 'Perfil de Empresa',
-            onTap: widget.onNavigateToProfile,
-          ),
-        ],
+        ),
       ),
     );
   }
