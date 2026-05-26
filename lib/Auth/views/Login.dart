@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
+import 'package:lookup_flutter/theme/lookup_theme.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -57,7 +58,7 @@ class LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: kSurface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -78,7 +79,7 @@ class LoginState extends State<Login> {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: kInk,
                 ),
               ),
               const SizedBox(height: 10),
@@ -160,7 +161,7 @@ class LoginState extends State<Login> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        backgroundColor: Colors.blueAccent,
+                        backgroundColor: kBrandBlue,
                       ),
                       child: const Text(
                         'Iniciar Sesión',
@@ -178,7 +179,7 @@ class LoginState extends State<Login> {
                 child: const Text(
                   '¿No tienes cuenta de empresa? Regístrate',
                   style: TextStyle(
-                    color: Colors.blueAccent,
+                    color: kBrandBlue,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

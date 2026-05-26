@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lookup_flutter/theme/lookup_theme.dart';
 
 class RecuperarContrasenia extends StatefulWidget {
   const RecuperarContrasenia({super.key});
@@ -21,13 +22,12 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: kSurface,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: kInk),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -54,7 +54,7 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0A6375),
+                  color: kBrandBlue,
                 ),
               ),
               const SizedBox(height: 10),
@@ -83,8 +83,8 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
                 child: TextField(
                   controller: emailController,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.email_outlined,
-                        color: Color(0xFF0A6375)),
+                    prefixIcon:
+                        const Icon(Icons.email_outlined, color: kBrandBlue),
                     hintText: "Ingresa tu correo electrónico",
                     hintStyle: const TextStyle(color: Colors.grey),
                     border: InputBorder.none,
@@ -99,7 +99,7 @@ class _RecuperarContraseniaState extends State<RecuperarContrasenia> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0A6375),
+                    backgroundColor: kBrandBlue,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

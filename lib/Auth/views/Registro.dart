@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
+import 'package:lookup_flutter/theme/lookup_theme.dart';
 
 class Registro extends StatefulWidget {
   const Registro({super.key});
@@ -127,19 +128,18 @@ class _RegistroState extends State<Registro> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: kSurface,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: kInk),
           onPressed: _isLoading ? null : () => Navigator.pop(context),
         ),
         title: const Text(
           "Crear Cuenta de Empresa",
           style: TextStyle(
-            color: Colors.black87,
+            color: kInk,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -223,12 +223,11 @@ class _RegistroState extends State<Registro> {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0A6375),
+                  backgroundColor: kBrandBlue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  disabledBackgroundColor:
-                      const Color(0xFF0A6375).withOpacity(0.5),
+                  disabledBackgroundColor: kBrandBlue.withValues(alpha: 0.5),
                 ),
                 onPressed: _isLoading ? null : _registrar,
                 child: _isLoading
@@ -260,7 +259,7 @@ class _RegistroState extends State<Registro> {
                   child: const Text(
                     "Inicia sesión",
                     style: TextStyle(
-                      color: Color(0xFF0A6375),
+                      color: kBrandBlue,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -279,7 +278,7 @@ class _RegistroState extends State<Registro> {
       style: const TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: Colors.black87,
+        color: kInk,
       ),
     );
   }
@@ -298,7 +297,7 @@ class _RegistroState extends State<Registro> {
       keyboardType: keyboardType,
       enabled: enabled,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: const Color(0xFF0A6375)),
+        prefixIcon: Icon(icon, color: kBrandBlue),
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
@@ -311,7 +310,7 @@ class _RegistroState extends State<Registro> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF0A6375), width: 1.3),
+          borderSide: const BorderSide(color: kBrandBlue, width: 1.3),
         ),
       ),
     );
