@@ -58,6 +58,15 @@ class _RegistroState extends State<Registro> {
       if (!mounted) return;
 
       if (success != null) {
+        if (authService.role != 'empresa') {
+          await authService.logout();
+          if (!mounted) return;
+          setState(() {
+            errorMessage = context.tr('auth.wrong_app');
+            _isLoading = false;
+          });
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.tr('auth.register.success')),
@@ -81,7 +90,7 @@ class _RegistroState extends State<Registro> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        errorMessage = context.tr('common.error.connection');
         _isLoading = false;
       });
     }
@@ -102,131 +111,146 @@ class _RegistroState extends State<Registro> {
   Widget build(BuildContext context) {
     final c = context.colors;
     return Scaffold(
-      appBar: AppBar(title: Text(context.t('auth.register.title'))),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Center(child: BrandMark(size: 52)),
-                  const SizedBox(height: 20),
-                  Text(
-                    context.t('auth.register.title'),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    context.t('auth.register.subtitle'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: c.inkMuted, height: 1.4),
-                  ),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: nombreController,
-                    autofillHints: const [AutofillHints.organizationName],
-                    enabled: !_isLoading,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: context.t('auth.company_name'),
-                      prefixIcon: Icon(Icons.business_outlined),
-                    ),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? context.tr('auth.company_name.required')
-                        : null,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: emailController,
-                    enabled: !_isLoading,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    autocorrect: false,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: context.t('auth.email'),
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    validator: (value) {
-                      final email = value?.trim() ?? '';
-                      final valid =
-                          RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-                      return valid ? null : context.tr('auth.email.invalid');
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: passwordController,
-                    enabled: !_isLoading,
-                    obscureText: _hidePassword,
-                    autofillHints: const [AutofillHints.newPassword],
-                    decoration: InputDecoration(
-                      labelText: context.t('auth.password'),
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      helperText: context.t('auth.password.hint'),
-                      helperMaxLines: 2,
-                      suffixIcon: IconButton(
-                        onPressed: () =>
-                            setState(() => _hidePassword = !_hidePassword),
-                        icon: Icon(
-                          _hidePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Center(child: BrandMark(size: 64)),
+                      const SizedBox(height: 20),
+                      Text(
+                        context.t('auth.register.title'),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
-                    ),
-                    validator: _validateStrongPassword,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: confirmPasswordController,
-                    enabled: !_isLoading,
-                    obscureText: _hideConfirm,
-                    autofillHints: const [AutofillHints.newPassword],
-                    decoration: InputDecoration(
-                      labelText: context.t('auth.confirm_password'),
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        onPressed: () =>
-                            setState(() => _hideConfirm = !_hideConfirm),
-                        icon: Icon(
-                          _hideConfirm
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
+                      const SizedBox(height: 6),
+                      Text(
+                        context.t('auth.register.subtitle'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: c.inkMuted, height: 1.4),
                       ),
-                    ),
-                    validator: (value) => value != passwordController.text
-                        ? context.tr('auth.password.mismatch')
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  if (errorMessage != null) ErrorBanner(message: errorMessage!),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _registrar,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: nombreController,
+                        autofillHints: const [AutofillHints.organizationName],
+                        enabled: !_isLoading,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          labelText: context.t('auth.company_name'),
+                          prefixIcon: Icon(Icons.business_outlined),
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                                ? context.tr('auth.company_name.required')
+                                : null,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: emailController,
+                        enabled: !_isLoading,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        autocorrect: false,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          labelText: context.t('auth.email'),
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                        validator: (value) {
+                          final email = value?.trim() ?? '';
+                          final valid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                              .hasMatch(email);
+                          return valid
+                              ? null
+                              : context.tr('auth.email.invalid');
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: passwordController,
+                        enabled: !_isLoading,
+                        obscureText: _hidePassword,
+                        autofillHints: const [AutofillHints.newPassword],
+                        decoration: InputDecoration(
+                          labelText: context.t('auth.password'),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          helperText: context.t('auth.password.hint'),
+                          helperMaxLines: 2,
+                          suffixIcon: IconButton(
+                            onPressed: () =>
+                                setState(() => _hidePassword = !_hidePassword),
+                            icon: Icon(
+                              _hidePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                             ),
-                          )
-                        : Text(context.t('auth.register')),
+                          ),
+                        ),
+                        validator: _validateStrongPassword,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: confirmPasswordController,
+                        enabled: !_isLoading,
+                        obscureText: _hideConfirm,
+                        autofillHints: const [AutofillHints.newPassword],
+                        decoration: InputDecoration(
+                          labelText: context.t('auth.confirm_password'),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            onPressed: () =>
+                                setState(() => _hideConfirm = !_hideConfirm),
+                            icon: Icon(
+                              _hideConfirm
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                          ),
+                        ),
+                        validator: (value) => value != passwordController.text
+                            ? context.tr('auth.password.mismatch')
+                            : null,
+                        onFieldSubmitted: (_) =>
+                            _isLoading ? null : _registrar(),
+                      ),
+                      const SizedBox(height: 20),
+                      if (errorMessage != null)
+                        ErrorBanner(message: errorMessage!),
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _registrar,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(context.t('auth.register')),
+                      ),
+                      const SizedBox(height: 16),
+                      InlinePromptLink(
+                        prompt: context.t('auth.has_account'),
+                        label: context.t('auth.login.link'),
+                        onPressed: _isLoading
+                            ? null
+                            : () =>
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                  '/login',
+                                  (route) => false,
+                                ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  TextButton(
-                    onPressed:
-                        _isLoading ? null : () => Navigator.of(context).pop(),
-                    child: Text(context.t('auth.have_account')),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

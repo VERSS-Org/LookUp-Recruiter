@@ -144,7 +144,9 @@ class AuthService with ChangeNotifier {
         // Loguear automáticamente después del registro exitoso
         return await login(email, password);
       } else {
-        throw Exception('Failed to create account.');
+        throw ApiException(
+          'El servidor no confirmó la creación de la cuenta.',
+        );
       }
     } catch (e) {
       debugPrint('Registration error: $e');

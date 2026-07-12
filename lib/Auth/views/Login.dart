@@ -6,8 +6,7 @@ import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
-/// Acceso para cuentas de empresa. En escritorio muestra un panel de marca a
-/// la izquierda y el formulario a la derecha; en móvil, una sola columna.
+/// Acceso directo para cuentas de empresa mediante un formulario centrado.
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -66,76 +65,25 @@ class LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final desktop = constraints.maxWidth >= 900;
-            final form = Center(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: desktop ? 48 : 24,
-                  vertical: 32,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 410),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (!desktop) ...[
-                        const Center(child: BrandMark(size: 64)),
-                        const SizedBox(height: 26),
-                      ],
-                      _buildForm(context),
-                    ],
-                  ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 410),
+              child: AutofillGroup(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: BrandMark(size: 64)),
+                    const SizedBox(height: 26),
+                    _buildForm(context),
+                  ],
                 ),
               ),
-            );
-
-            if (!desktop) return form;
-            return Row(
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: Container(
-                    color: c.surfaceAlt,
-                    padding: const EdgeInsets.all(48),
-                    alignment: Alignment.center,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 420),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const BrandMark(size: 92),
-                          const SizedBox(height: 36),
-                          Text(
-                            context.t('auth.company.access'),
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            context.t('app.tagline'),
-                            style: TextStyle(
-                              color: c.inkMuted,
-                              fontSize: 16,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 6,
-                  child: ColoredBox(color: c.surface, child: form),
-                ),
-              ],
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
@@ -150,11 +98,13 @@ class LoginState extends State<Login> {
         children: [
           Text(
             context.t('auth.login.title'),
+            textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 6),
           Text(
             context.t('auth.login.subtitle'),
+            textAlign: TextAlign.center,
             style: TextStyle(color: c.inkMuted, height: 1.4),
           ),
           const SizedBox(height: 26),
@@ -189,8 +139,8 @@ class LoginState extends State<Login> {
             ),
             obscureText: _hidePassword,
             autofillHints: const [AutofillHints.password],
-            validator: (value) => (value == null || value.length < 6)
-                ? context.tr('auth.password.hint')
+            validator: (value) => (value == null || value.length < 8)
+                ? context.tr('auth.password.short')
                 : null,
             onSaved: (value) => _password = value!,
             enabled: !_isLoading,
@@ -211,13 +161,15 @@ class LoginState extends State<Login> {
                   )
                 : Text(context.t('auth.login')),
           ),
-          const SizedBox(height: 10),
-          TextButton(
+          const SizedBox(height: 16),
+          InlinePromptLink(
+            prompt: context.t('auth.no_account'),
+            label: context.t('auth.register.link'),
             onPressed: _isLoading
                 ? null
                 : () => Navigator.pushNamed(context, '/registro'),
-            child: Text(context.t('auth.register.cta')),
           ),
+          const SizedBox(height: 4),
           TextButton(
             onPressed: _isLoading
                 ? null

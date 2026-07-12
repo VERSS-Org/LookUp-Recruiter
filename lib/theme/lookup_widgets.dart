@@ -29,6 +29,49 @@ class BrandMark extends StatelessWidget {
   }
 }
 
+/// Texto auxiliar con una acción discreta, usado para alternar entre acceso y
+/// registro sin que la navegación parezca una pestaña o un botón principal.
+class InlinePromptLink extends StatelessWidget {
+  const InlinePromptLink({
+    super.key,
+    required this.prompt,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String prompt;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          prompt,
+          style: TextStyle(color: c.inkMuted, fontSize: 13.5),
+        ),
+        TextButton(
+          onPressed: onPressed,
+          style: TextButton.styleFrom(
+            minimumSize: Size.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            textStyle: const TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          child: Text(label),
+        ),
+      ],
+    );
+  }
+}
+
 /// Icono con badge numérico (mensajes sin leer, etc.).
 class BadgedIconButton extends StatelessWidget {
   const BadgedIconButton({
