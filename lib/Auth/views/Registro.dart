@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:lookup_flutter/services/api_service.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
+import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
+import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
+/// Registro de una nueva cuenta de empresa.
 class Registro extends StatefulWidget {
   const Registro({super.key});
 
@@ -11,15 +15,16 @@ class Registro extends StatefulWidget {
 }
 
 class _RegistroState extends State<Registro> {
-  final TextEditingController nombreController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final nombreController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   String? errorMessage;
   bool _isLoading = false;
-  final String _selectedRole = 'empresa'; // Valor por defecto
+  bool _hidePassword = true;
+  bool _hideConfirm = true;
 
   @override
   void dispose() {
@@ -31,33 +36,7 @@ class _RegistroState extends State<Registro> {
   }
 
   Future<void> _registrar() async {
-    // Validación de campos obligatorios
-    if (nombreController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        passwordController.text.isEmpty ||
-        confirmPasswordController.text.isEmpty) {
-      setState(() =>
-          errorMessage = "Por favor completa todos los campos obligatorios.");
-      return;
-    }
-
-    // Validar email
-    if (!emailController.text.contains('@')) {
-      setState(() => errorMessage = "Por favor ingresa un correo válido.");
-      return;
-    }
-
-    // Validar contraseña
-    final passwordError = _validateStrongPassword(passwordController.text);
-    if (passwordError != null) {
-      setState(() => errorMessage = passwordError);
-      return;
-    }
-
-    if (passwordController.text != confirmPasswordController.text) {
-      setState(() => errorMessage = "Las contraseñas no coinciden.");
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
@@ -66,12 +45,11 @@ class _RegistroState extends State<Registro> {
 
     final authService = Provider.of<AuthService>(context, listen: false);
     try {
-      // Usar el nuevo método register() de AuthService
       final success = await authService.register(
         nombreCompleto: nombreController.text.trim(),
         email: emailController.text.trim(),
         password: passwordController.text,
-        rol: _selectedRole,
+        rol: 'empresa',
         carrera: null,
         telefono: null,
         ciudad: null,
@@ -81,268 +59,177 @@ class _RegistroState extends State<Registro> {
 
       if (success != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cuenta creada exitosamente.'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(context.tr('auth.register.success')),
+            duration: const Duration(seconds: 2),
           ),
         );
-
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/home',
-          (route) => false,
-        );
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/home', (route) => false);
       } else {
         setState(() {
-          errorMessage = 'No se pudo crear la cuenta. Intenta nuevamente.';
+          errorMessage = context.tr('auth.register.error');
           _isLoading = false;
         });
       }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = e.message;
+        _isLoading = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        errorMessage = e.toString().replaceFirst("Exception: ", "");
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
       });
     }
   }
 
-  String? _validateStrongPassword(String password) {
-    if (password.length < 8) {
-      return "La contrasena debe tener al menos 8 caracteres.";
+  String? _validateStrongPassword(String? password) {
+    if (password == null || password.length < 8) {
+      return context.tr('auth.password.hint');
     }
-    if (!password.contains(RegExp(r'[A-Z]'))) {
-      return "La contrasena debe incluir una letra mayuscula.";
-    }
-    if (!password.contains(RegExp(r'[a-z]'))) {
-      return "La contrasena debe incluir una letra minuscula.";
-    }
-    if (!password.contains(RegExp(r'[0-9]'))) {
-      return "La contrasena debe incluir un numero.";
-    }
-    if (!password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'))) {
-      return "La contrasena debe incluir un caracter especial.";
-    }
-    return null;
+    final isStrong = password.contains(RegExp(r'[A-Z]')) &&
+        password.contains(RegExp(r'[a-z]')) &&
+        password.contains(RegExp(r'[0-9]')) &&
+        password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'));
+    return isStrong ? null : context.tr('auth.password.hint');
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: kSurface,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: kInk),
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "Crear Cuenta de Empresa",
-          style: TextStyle(
-            color: kInk,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 25),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-
-            // Cabecera
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: kBrandGradient,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: softShadow(opacity: 0.28, blur: 24, y: 12),
-                ),
-                child: const Icon(
-                  Icons.business_center_outlined,
-                  color: Colors.white,
-                  size: 34,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Center(
-              child: Text(
-                'Crea tu cuenta de empresa para empezar a publicar ofertas.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: kInkMuted, height: 1.4),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Nombre Completo
-            _buildLabel("Nombre completo"),
-            _buildTextField(
-              controller: nombreController,
-              hint: "Ingresa tu nombre completo",
-              icon: Icons.person_outline,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 16),
-
-            // Correo
-            _buildLabel("Correo electrónico"),
-            _buildTextField(
-              controller: emailController,
-              hint: "Ingresa tu correo",
-              icon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 16),
-
-            // Contraseña
-            _buildLabel("Contraseña"),
-            _buildTextField(
-              controller: passwordController,
-              hint: "Crea una contraseña (mín. 8 caracteres)",
-              icon: Icons.lock_outline,
-              obscure: true,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 16),
-
-            // Confirmar Contraseña
-            _buildLabel("Confirmar contraseña"),
-            _buildTextField(
-              controller: confirmPasswordController,
-              hint: "Repite tu contraseña",
-              icon: Icons.lock_outline,
-              obscure: true,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 16),
-
-            // Mensaje de Error
-            if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF1F1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFFD3D3)),
-                  ),
-                  child: Text(
-                    errorMessage!,
+      appBar: AppBar(title: Text(context.t('auth.register.title'))),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Center(child: BrandMark(size: 52)),
+                  const SizedBox(height: 20),
+                  Text(
+                    context.t('auth.register.title'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFFB42525),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    context.t('auth.register.subtitle'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: c.inkMuted, height: 1.4),
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: nombreController,
+                    autofillHints: const [AutofillHints.organizationName],
+                    enabled: !_isLoading,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: context.t('auth.company_name'),
+                      prefixIcon: Icon(Icons.business_outlined),
                     ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? context.tr('auth.company_name.required')
+                        : null,
                   ),
-                ),
-              ),
-
-            // Botón Registrar
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kBrandBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: emailController,
+                    enabled: !_isLoading,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    autocorrect: false,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: context.t('auth.email'),
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    validator: (value) {
+                      final email = value?.trim() ?? '';
+                      final valid =
+                          RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+                      return valid ? null : context.tr('auth.email.invalid');
+                    },
                   ),
-                  disabledBackgroundColor: kBrandBlue.withValues(alpha: 0.5),
-                ),
-                onPressed: _isLoading ? null : _registrar,
-                child: _isLoading
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      )
-                    : const Text(
-                        "Registrar",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: passwordController,
+                    enabled: !_isLoading,
+                    obscureText: _hidePassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: InputDecoration(
+                      labelText: context.t('auth.password'),
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      helperText: context.t('auth.password.hint'),
+                      helperMaxLines: 2,
+                      suffixIcon: IconButton(
+                        onPressed: () =>
+                            setState(() => _hidePassword = !_hidePassword),
+                        icon: Icon(
+                          _hidePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                         ),
                       ),
+                    ),
+                    validator: _validateStrongPassword,
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: confirmPasswordController,
+                    enabled: !_isLoading,
+                    obscureText: _hideConfirm,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: InputDecoration(
+                      labelText: context.t('auth.confirm_password'),
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        onPressed: () =>
+                            setState(() => _hideConfirm = !_hideConfirm),
+                        icon: Icon(
+                          _hideConfirm
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                      ),
+                    ),
+                    validator: (value) => value != passwordController.text
+                        ? context.tr('auth.password.mismatch')
+                        : null,
+                  ),
+                  const SizedBox(height: 20),
+                  if (errorMessage != null) ErrorBanner(message: errorMessage!),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _registrar,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(context.t('auth.register')),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed:
+                        _isLoading ? null : () => Navigator.of(context).pop(),
+                    child: Text(context.t('auth.have_account')),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 30),
-
-            // Link a Login
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "¿Ya tienes una cuenta? ",
-                  style: TextStyle(color: Colors.black87),
-                ),
-                GestureDetector(
-                  onTap: _isLoading ? null : () => Navigator.of(context).pop(),
-                  child: const Text(
-                    "Inicia sesión",
-                    style: TextStyle(
-                      color: kBrandBlue,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: kInk,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool obscure = false,
-    TextInputType keyboardType = TextInputType.text,
-    bool enabled = true,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      enabled: enabled,
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: kInkMuted),
-        hintText: hint,
-        hintStyle: const TextStyle(color: kInkMuted),
-        filled: true,
-        fillColor: enabled ? kFieldFill : const Color(0xFFE9EDF4),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: kHairline, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: kBrandBlue, width: 1.6),
+          ),
         ),
       ),
     );

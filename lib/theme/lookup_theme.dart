@@ -1,278 +1,508 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import 'package:lookup_flutter/services/locale_controller.dart';
+
+/// Colores de marca LookUp (constantes entre modos).
 const Color kBrandBlue = Color(0xFF28348A);
-const Color kBrandBlueAlt = Color(0xFF3A4BC4);
+const Color kBrandBlueBright = Color(0xFF4053C8);
 const Color kSkyBlue = Color(0xFF22A9E8);
-const Color kInk = Color(0xFF172033);
-const Color kInkMuted = Color(0xFF6B7591);
-const Color kSurface = Color(0xFFEFF2F9);
-const Color kHairline = Color(0xFFE6EBF4);
-const Color kFieldFill = Color(0xFFF3F5FB);
 
-/// Degradado de marca usado en cabeceras y acentos destacados.
-const LinearGradient kBrandGradient = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  colors: [kBrandBlue, Color(0xFF2F4FBE), kSkyBlue],
-);
+/// Tokens de color dependientes del modo (claro/oscuro).
+///
+/// Se accede con `context.colors`. Los widgets no deben usar colores fijos de
+/// tinta/superficie: siempre a traves de esta extension para que el modo
+/// oscuro funcione en toda la app.
+class LookUpColors extends ThemeExtension<LookUpColors> {
+  const LookUpColors({
+    required this.background,
+    required this.surface,
+    required this.surfaceAlt,
+    required this.border,
+    required this.ink,
+    required this.inkMuted,
+    required this.inkFaint,
+    required this.brand,
+    required this.accent,
+    required this.success,
+    required this.warning,
+    required this.danger,
+    required this.chipAlpha,
+  });
 
-/// Sombra suave y aireada para tarjetas y superficies elevadas.
-List<BoxShadow> softShadow({
-  double opacity = 0.08,
-  double blur = 24,
-  double y = 12,
-}) {
-  return [
-    BoxShadow(
-      color: kBrandBlue.withValues(alpha: opacity),
-      blurRadius: blur,
-      offset: Offset(0, y),
-    ),
-  ];
-}
+  final Color background;
+  final Color surface;
+  final Color surfaceAlt;
+  final Color border;
+  final Color ink;
+  final Color inkMuted;
+  final Color inkFaint;
 
-/// Estilo tipografico breve para titulos de seccion en pantallas internas.
-TextStyle kSectionTitleStyle = GoogleFonts.plusJakartaSans(
-  fontSize: 18,
-  fontWeight: FontWeight.w800,
-  color: kInk,
-  letterSpacing: -0.2,
-);
+  /// Azul de marca legible sobre `surface` en el modo actual.
+  final Color brand;
 
-/// Estilo tipografico para etiquetas de campo y leyendas muted.
-TextStyle kLabelStyle = GoogleFonts.plusJakartaSans(
-  fontSize: 13,
-  fontWeight: FontWeight.w600,
-  color: kInkMuted,
-  letterSpacing: 0.1,
-);
+  /// Cian de acento legible sobre `surface` en el modo actual.
+  final Color accent;
+  final Color success;
+  final Color warning;
+  final Color danger;
 
-ThemeData buildLookUpTheme() {
-  final base = ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: kBrandBlue,
-      primary: kBrandBlue,
-      secondary: kSkyBlue,
-      surface: Colors.white,
-    ),
-    scaffoldBackgroundColor: kSurface,
+  /// Opacidad base para fondos de chips/insignias.
+  final double chipAlpha;
+
+  static const light = LookUpColors(
+    background: Color(0xFFF6F7FA),
+    surface: Color(0xFFFFFFFF),
+    surfaceAlt: Color(0xFFF0F2F7),
+    border: Color(0xFFE3E7EF),
+    ink: Color(0xFF1A2233),
+    inkMuted: Color(0xFF5C6577),
+    inkFaint: Color(0xFF8B93A7),
+    brand: kBrandBlue,
+    accent: Color(0xFF0E7FB6),
+    success: Color(0xFF1E7F4F),
+    warning: Color(0xFFA36716),
+    danger: Color(0xFFC03D3D),
+    chipAlpha: 0.10,
   );
 
-  final textTheme = GoogleFonts.plusJakartaSansTextTheme(base.textTheme)
-      .apply(bodyColor: kInk, displayColor: kInk)
+  // Modo oscuro sobre grises neutros (no azulados): descansa mejor la vista
+  // y deja que el azul de marca destaque solo donde importa.
+  static const dark = LookUpColors(
+    background: Color(0xFF141416),
+    surface: Color(0xFF1C1C1F),
+    surfaceAlt: Color(0xFF27272B),
+    border: Color(0xFF323237),
+    ink: Color(0xFFEDEDEF),
+    inkMuted: Color(0xFFA6A7AD),
+    inkFaint: Color(0xFF77787F),
+    brand: Color(0xFFA3B0FF),
+    accent: Color(0xFF57BDF0),
+    success: Color(0xFF5BC48D),
+    warning: Color(0xFFE0A65A),
+    danger: Color(0xFFEF7B7B),
+    chipAlpha: 0.16,
+  );
+
+  @override
+  LookUpColors copyWith({
+    Color? background,
+    Color? surface,
+    Color? surfaceAlt,
+    Color? border,
+    Color? ink,
+    Color? inkMuted,
+    Color? inkFaint,
+    Color? brand,
+    Color? accent,
+    Color? success,
+    Color? warning,
+    Color? danger,
+    double? chipAlpha,
+  }) {
+    return LookUpColors(
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      surfaceAlt: surfaceAlt ?? this.surfaceAlt,
+      border: border ?? this.border,
+      ink: ink ?? this.ink,
+      inkMuted: inkMuted ?? this.inkMuted,
+      inkFaint: inkFaint ?? this.inkFaint,
+      brand: brand ?? this.brand,
+      accent: accent ?? this.accent,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      danger: danger ?? this.danger,
+      chipAlpha: chipAlpha ?? this.chipAlpha,
+    );
+  }
+
+  @override
+  LookUpColors lerp(ThemeExtension<LookUpColors>? other, double t) {
+    if (other is! LookUpColors) return this;
+    Color mix(Color a, Color b) => Color.lerp(a, b, t)!;
+    return LookUpColors(
+      background: mix(background, other.background),
+      surface: mix(surface, other.surface),
+      surfaceAlt: mix(surfaceAlt, other.surfaceAlt),
+      border: mix(border, other.border),
+      ink: mix(ink, other.ink),
+      inkMuted: mix(inkMuted, other.inkMuted),
+      inkFaint: mix(inkFaint, other.inkFaint),
+      brand: mix(brand, other.brand),
+      accent: mix(accent, other.accent),
+      success: mix(success, other.success),
+      warning: mix(warning, other.warning),
+      danger: mix(danger, other.danger),
+      chipAlpha: chipAlpha + (other.chipAlpha - chipAlpha) * t,
+    );
+  }
+}
+
+extension LookUpColorsX on BuildContext {
+  LookUpColors get colors => Theme.of(this).extension<LookUpColors>()!;
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
+/// Normaliza los estados a su forma canonica (el backend acepta ambas apps
+/// deben mostrar exactamente el mismo conjunto de estados).
+String canonicalEstado(String estado) =>
+    estado == 'rechazo' ? 'rechazado' : estado;
+
+/// Color, etiqueta traducida e icono de cada estado del proceso.
+({Color color, String label, IconData icon}) estadoStyle(
+  BuildContext context,
+  String estado,
+) {
+  final c = context.colors;
+  final canonico = canonicalEstado(estado);
+
+  String label;
+  try {
+    label = Provider.of<LocaleController>(context, listen: false)
+        .t('estado.$canonico');
+  } catch (_) {
+    label = canonico;
+  }
+  if (label == 'estado.$canonico') label = canonico;
+
+  return switch (canonico) {
+    'pendiente' => (
+        color: c.inkMuted,
+        label: label,
+        icon: Icons.schedule_outlined
+      ),
+    'en_revision' => (
+        color: c.warning,
+        label: label,
+        icon: Icons.visibility_outlined
+      ),
+    'entrevista' => (
+        color: c.accent,
+        label: label,
+        icon: Icons.event_available_outlined
+      ),
+    'aceptado' => (
+        color: c.success,
+        label: label,
+        icon: Icons.thumb_up_alt_outlined
+      ),
+    'oferta' => (
+        color: c.success,
+        label: label,
+        icon: Icons.thumb_up_alt_outlined
+      ),
+    'rechazado' => (color: c.danger, label: label, icon: Icons.cancel_outlined),
+    'abierto' => (
+        color: c.success,
+        label: label,
+        icon: Icons.radio_button_checked
+      ),
+    'cerrado' => (color: c.inkFaint, label: label, icon: Icons.lock_outline),
+    _ => (color: c.brand, label: label, icon: Icons.circle_outlined),
+  };
+}
+
+ThemeData buildLookUpTheme(Brightness brightness) {
+  final palette =
+      brightness == Brightness.dark ? LookUpColors.dark : LookUpColors.light;
+  final isDark = brightness == Brightness.dark;
+  final primary = isDark ? kBrandBlueBright : kBrandBlue;
+
+  final base = ThemeData(
+    useMaterial3: true,
+    brightness: brightness,
+    visualDensity: VisualDensity.standard,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: kBrandBlue,
+      brightness: brightness,
+      primary: primary,
+      onPrimary: Colors.white,
+      secondary: kSkyBlue,
+      surface: palette.surface,
+      onSurface: palette.ink,
+      error: palette.danger,
+      outline: palette.border,
+    ),
+    scaffoldBackgroundColor: palette.background,
+  );
+
+  final textTheme = GoogleFonts.poppinsTextTheme(base.textTheme)
+      .apply(bodyColor: palette.ink, displayColor: palette.ink)
       .copyWith(
-        titleLarge: GoogleFonts.plusJakartaSans(
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.3,
-          color: kInk,
+        headlineSmall: GoogleFonts.poppins(
+          fontSize: 23,
+          fontWeight: FontWeight.w600,
+          color: palette.ink,
+          height: 1.25,
         ),
-        bodyMedium: GoogleFonts.plusJakartaSans(height: 1.35, color: kInk),
+        titleLarge: GoogleFonts.poppins(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0,
+          color: palette.ink,
+        ),
+        titleMedium: GoogleFonts.poppins(
+          fontWeight: FontWeight.w600,
+          color: palette.ink,
+        ),
+        bodyMedium: GoogleFonts.poppins(height: 1.45, color: palette.ink),
+        bodySmall: GoogleFonts.poppins(color: palette.inkMuted),
+        labelLarge: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      );
+
+  OutlineInputBorder inputBorder(Color color, [double width = 1]) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: color, width: width),
       );
 
   return base.copyWith(
     textTheme: textTheme,
     primaryTextTheme: textTheme,
+    extensions: [palette],
     appBarTheme: AppBarTheme(
-      backgroundColor: Colors.white,
-      foregroundColor: kInk,
-      surfaceTintColor: Colors.white,
-      centerTitle: true,
+      backgroundColor: palette.surface,
+      foregroundColor: palette.ink,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: false,
       elevation: 0,
-      scrolledUnderElevation: 0.5,
-      titleTextStyle: GoogleFonts.plusJakartaSans(
-        color: kInk,
-        fontSize: 18,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0.2,
+      scrolledUnderElevation: 0,
+      titleTextStyle: GoogleFonts.poppins(
+        color: palette.ink,
+        fontSize: 19,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+      ),
+      shape: Border(bottom: BorderSide(color: palette.border)),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: palette.inkMuted,
+        minimumSize: const Size(44, 44),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     ),
     cardTheme: CardThemeData(
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
-      elevation: 8,
-      shadowColor: kBrandBlue.withValues(alpha: 0.10),
+      color: palette.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: palette.border),
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: kBrandBlue,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(52),
-        elevation: 2,
-        shadowColor: kBrandBlue.withValues(alpha: 0.45),
-        textStyle: GoogleFonts.plusJakartaSans(
+        disabledBackgroundColor: palette.surfaceAlt,
+        disabledForegroundColor: palette.inkFaint,
+        minimumSize: const Size(64, 48),
+        elevation: 0,
+        textStyle: GoogleFonts.poppins(
           fontSize: 15,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
+          fontWeight: FontWeight.w600,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: kBrandBlue,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        textStyle: GoogleFonts.plusJakartaSans(
+        textStyle: GoogleFonts.poppins(
           fontSize: 14,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: kBrandBlue,
-        minimumSize: const Size.fromHeight(50),
-        side: BorderSide(color: kBrandBlue.withValues(alpha: 0.35), width: 1.4),
-        textStyle: GoogleFonts.plusJakartaSans(
+        foregroundColor: palette.brand,
+        minimumSize: const Size(64, 46),
+        side: BorderSide(color: palette.border, width: 1.2),
+        textStyle: GoogleFonts.poppins(
           fontSize: 14,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: kBrandBlue,
-        textStyle: GoogleFonts.plusJakartaSans(
+        foregroundColor: palette.brand,
+        textStyle: GoogleFonts.poppins(
           fontSize: 14,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
       ),
     ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: kBrandBlue,
-      foregroundColor: Colors.white,
-      elevation: 4,
-      extendedTextStyle: GoogleFonts.plusJakartaSans(
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: kFieldFill,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      hintStyle: GoogleFonts.plusJakartaSans(color: kInkMuted),
-      labelStyle: GoogleFonts.plusJakartaSans(color: kInkMuted),
-      floatingLabelStyle: GoogleFonts.plusJakartaSans(
-        color: kBrandBlue,
+      fillColor: palette.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      hintStyle: GoogleFonts.poppins(color: palette.inkFaint),
+      labelStyle: GoogleFonts.poppins(color: palette.inkMuted),
+      helperStyle: GoogleFonts.poppins(
+        color: palette.inkFaint,
+        fontSize: 12,
+      ),
+      floatingLabelStyle: GoogleFonts.poppins(
+        color: palette.brand,
         fontWeight: FontWeight.w600,
       ),
-      prefixIconColor: kInkMuted,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: kHairline, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: kBrandBlue, width: 1.6),
-      ),
+      prefixIconColor: palette.inkFaint,
+      suffixIconColor: palette.inkFaint,
+      border: inputBorder(palette.border),
+      enabledBorder: inputBorder(palette.border),
+      focusedBorder: inputBorder(palette.brand, 1.5),
+      errorBorder: inputBorder(palette.danger),
+      focusedErrorBorder: inputBorder(palette.danger, 1.5),
     ),
-    dividerTheme: const DividerThemeData(
-      color: kHairline,
+    dividerTheme: DividerThemeData(
+      color: palette.border,
       thickness: 1,
       space: 1,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      height: 70,
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      elevation: 3,
-      shadowColor: kBrandBlue.withValues(alpha: 0.18),
-      indicatorColor: kBrandBlue.withValues(alpha: 0.12),
+      height: 66,
+      backgroundColor: palette.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      indicatorColor: primary.withValues(alpha: isDark ? 0.28 : 0.12),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => GoogleFonts.plusJakartaSans(
-          fontSize: 11.5,
+        (states) => GoogleFonts.poppins(
+          fontSize: 11,
           fontWeight: states.contains(WidgetState.selected)
               ? FontWeight.w700
               : FontWeight.w500,
-          color: states.contains(WidgetState.selected) ? kBrandBlue : kInkMuted,
+          color: states.contains(WidgetState.selected)
+              ? palette.brand
+              : palette.inkMuted,
         ),
       ),
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
-          color: states.contains(WidgetState.selected) ? kBrandBlue : kInkMuted,
-          size: 24,
+          color: states.contains(WidgetState.selected)
+              ? palette.brand
+              : palette.inkMuted,
+          size: 23,
         ),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: kInk,
-      contentTextStyle: GoogleFonts.plusJakartaSans(color: Colors.white),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      backgroundColor: isDark ? palette.surfaceAlt : const Color(0xFF232B3E),
+      contentTextStyle: GoogleFonts.poppins(color: Colors.white),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      titleTextStyle: GoogleFonts.plusJakartaSans(
-        color: kInk,
-        fontSize: 18,
-        fontWeight: FontWeight.w800,
+      backgroundColor: palette.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: palette.border),
+      ),
+      titleTextStyle: GoogleFonts.poppins(
+        color: palette.ink,
+        fontSize: 19,
+        fontWeight: FontWeight.w700,
       ),
     ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(color: kBrandBlue),
-    listTileTheme: const ListTileThemeData(iconColor: kBrandBlue),
+    drawerTheme: DrawerThemeData(
+      backgroundColor: palette.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(left: Radius.circular(16)),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: primary,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      extendedTextStyle: GoogleFonts.poppins(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: palette.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: palette.border),
+      ),
+    ),
+    tabBarTheme: TabBarThemeData(
+      labelColor: palette.brand,
+      unselectedLabelColor: palette.inkMuted,
+      dividerColor: palette.border,
+      indicatorColor: palette.brand,
+      indicatorSize: TabBarIndicatorSize.label,
+      labelStyle: GoogleFonts.poppins(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelStyle: GoogleFonts.poppins(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: palette.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: palette.brand),
+    listTileTheme: ListTileThemeData(iconColor: palette.brand),
+    chipTheme: base.chipTheme.copyWith(
+      backgroundColor: palette.surfaceAlt,
+      side: BorderSide(color: palette.border),
+      labelStyle: GoogleFonts.poppins(color: palette.ink, fontSize: 13),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: SegmentedButton.styleFrom(
+        selectedBackgroundColor: primary.withValues(alpha: isDark ? 0.3 : 0.1),
+        selectedForegroundColor: palette.brand,
+        foregroundColor: palette.inkMuted,
+        side: BorderSide(color: palette.border),
+        textStyle: GoogleFonts.poppins(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
-        color: kInk,
-        borderRadius: BorderRadius.circular(10),
+        color: isDark ? palette.surfaceAlt : const Color(0xFF232B3E),
+        borderRadius: BorderRadius.circular(8),
       ),
-      textStyle: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 12),
+      textStyle: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+    ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: palette.brand,
+      selectionColor: palette.brand.withValues(alpha: 0.22),
+      selectionHandleColor: palette.brand,
+    ),
+    scrollbarTheme: ScrollbarThemeData(
+      thumbColor: WidgetStatePropertyAll(
+        palette.inkFaint.withValues(alpha: 0.55),
+      ),
+      radius: const Radius.circular(8),
+      thickness: const WidgetStatePropertyAll(6),
     ),
   );
-}
-
-/// Widget reutilizable: titulo de seccion con punto acento y accion opcional.
-class SectionLabel extends StatelessWidget {
-  const SectionLabel({
-    super.key,
-    required this.title,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 2, right: 2, top: 4, bottom: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 18,
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              gradient: kBrandGradient,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          Expanded(
-            child: Text(title, style: kSectionTitleStyle),
-          ),
-          if (actionLabel != null)
-            TextButton(
-              onPressed: onAction,
-              child: Text(actionLabel!),
-            ),
-        ],
-      ),
-    );
-  }
 }

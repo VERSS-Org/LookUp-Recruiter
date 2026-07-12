@@ -1,11 +1,11 @@
 {
-    "name": "LookUp Recruiter",
+    "name": "LookUp Empresas",
     "short_name": "LookUp",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#EFF2F9",
+    "background_color": "#FFFFFF",
     "theme_color": "#28348A",
-    "description": "Panel de reclutamiento de LookUp.",
+    "description": "Aplicación para empresas de LookUp.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

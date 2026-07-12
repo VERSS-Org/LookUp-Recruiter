@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/puesto_service.dart';
+import 'package:lookup_flutter/services/locale_controller.dart';
+import 'package:lookup_flutter/Puesto/views/EditarPuestoPage.dart';
 import 'package:lookup_flutter/Puesto/views/PuestoCandidatosPage.dart';
+import 'package:lookup_flutter/theme/lookup_theme.dart';
+import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
+/// Detalle de una vacante con dos pestañas: detalle y postulantes.
 class DetallePuestoPage extends StatefulWidget {
   final Map<String, dynamic> puesto;
 
@@ -15,6 +20,9 @@ class DetallePuestoPage extends StatefulWidget {
 class _DetallePuestoPageState extends State<DetallePuestoPage> {
   late Future<Map<String, dynamic>?> _puestoDetailFuture;
 
+  String? get _puestoId =>
+      (widget.puesto['puesto_id'] ?? widget.puesto['id'])?.toString();
+
   @override
   void initState() {
     super.initState();
@@ -22,302 +30,411 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
   }
 
   void _refreshPuestoDetails() {
-    final puestoId = widget.puesto['puesto_id'] ?? widget.puesto['id'];
-    if (puestoId != null) {
-      setState(() {
-        _puestoDetailFuture = Provider.of<PuestoService>(context, listen: false)
-            .getPuestoDetails(puestoId.toString());
-      });
-    } else {
-      _puestoDetailFuture = Future.value(null);
-    }
+    final puestoId = _puestoId;
+    setState(() {
+      _puestoDetailFuture = puestoId == null
+          ? Future.value(null)
+          : Provider.of<PuestoService>(context, listen: false)
+              .getPuestoDetails(puestoId);
+    });
   }
 
   Future<void> _cambiarEstado(Map<String, dynamic> puesto) async {
     final currentState = puesto['estado']?.toString() ?? 'abierto';
     final newState = currentState == 'abierto' ? 'cerrado' : 'abierto';
 
-    final puestoId = (puesto['puesto_id'] ?? puesto['id'])?.toString();
-    final empresaId = puesto['empresa'] is Map
-        ? puesto['empresa']['id']?.toString()
-        : puesto['empresa_id']?.toString();
-
-    if (puestoId == null || empresaId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Error: No se pudo identificar el puesto o la empresa.')),
-      );
-      return;
-    }
-
-    final dialogTitle = Text(newState == 'cerrado'
-        ? 'Confirmar Cierre de Oferta'
-        : 'Confirmar Reapertura de Oferta');
-    final dialogContent = Text(newState == 'cerrado'
-        ? '¿Estás seguro de que quieres cerrar esta oferta? Los usuarios ya no podrán postularse ni verla.'
-        : '¿Estás seguro de que quieres reabrir esta oferta? Volverá a estar visible para los usuarios.');
+    final puestoId = _puestoId;
+    final empresaId = puesto['empresa_id']?.toString();
+    if (puestoId == null || empresaId == null) return;
 
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: dialogTitle,
-          content: dialogContent,
+          title: Text(
+            newState == 'cerrado'
+                ? context.tr('jobs.close')
+                : context.tr('jobs.reopen'),
+          ),
+          content: Text(
+            newState == 'cerrado'
+                ? context.tr('jobs.close.confirm')
+                : context.tr('jobs.reopen.confirm'),
+          ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(context.tr('common.cancel')),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Confirmar'),
+            FilledButton(
+              style: newState == 'cerrado'
+                  ? FilledButton.styleFrom(
+                      backgroundColor: context.colors.danger,
+                    )
+                  : null,
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(context.tr('common.confirm')),
             ),
           ],
         );
       },
     );
 
-    if (confirm == true) {
-      final puestoService = Provider.of<PuestoService>(context, listen: false);
-      final success = await puestoService.cambiarEstadoPuesto(
-          puestoId, newState, empresaId);
+    if (confirm != true || !mounted) return;
 
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    'El estado del puesto ha sido actualizado a "$newState".')),
-          );
-          _refreshPuestoDetails();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(puestoService.errorMessage ??
-                    'Ocurrió un error al cambiar el estado.')),
-          );
-        }
-      }
+    final puestoService = Provider.of<PuestoService>(context, listen: false);
+    final success =
+        await puestoService.cambiarEstadoPuesto(puestoId, newState, empresaId);
+
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newState == 'cerrado'
+                ? context.tr('jobs.closed.ok')
+                : context.tr('jobs.reopened.ok'),
+          ),
+        ),
+      );
+      _refreshPuestoDetails();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(puestoService.errorMessage ?? 'Error'),
+          backgroundColor: context.colors.danger,
+        ),
+      );
+    }
+  }
+
+  Future<void> _editarPuesto(Map<String, dynamic> puesto) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => EditarPuestoPage(puesto: puesto)),
+    );
+    if (updated == true && mounted) {
+      _refreshPuestoDetails();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.puesto['titulo'] ?? 'Detalle de la Oferta'),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.puesto['titulo']?.toString() ?? context.t('jobs.detail'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: context.t('jobs.detail')),
+              Tab(text: context.t('jobs.candidates')),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            FutureBuilder<Map<String, dynamic>?>(
+              future: _puestoDetailFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final displayPuesto = Map<String, dynamic>.from(widget.puesto);
+                if (snapshot.data != null) {
+                  displayPuesto.addAll(snapshot.data!);
+                }
+                return _DetalleTab(
+                  puesto: displayPuesto,
+                  onEditar: () => _editarPuesto(displayPuesto),
+                  onCambiarEstado: () => _cambiarEstado(displayPuesto),
+                );
+              },
+            ),
+            CandidatosView(puesto: widget.puesto),
+          ],
+        ),
       ),
-      body: FutureBuilder<Map<String, dynamic>?>(
-        future: _puestoDetailFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    );
+  }
+}
 
-          if (snapshot.hasError) {
-            return Center(
-                child: Text('Error al cargar detalles: ${snapshot.error}'));
-          }
+class _DetalleTab extends StatelessWidget {
+  const _DetalleTab({
+    required this.puesto,
+    required this.onEditar,
+    required this.onCambiarEstado,
+  });
 
-          final fetchedPuesto = snapshot.data;
-          final displayPuesto = Map<String, dynamic>.from(widget.puesto);
+  final Map<String, dynamic> puesto;
+  final VoidCallback onEditar;
+  final VoidCallback onCambiarEstado;
 
-          if (fetchedPuesto != null) {
-            fetchedPuesto.forEach((key, value) {
-              if (key == 'empresa' && value == null) return;
-              displayPuesto[key] = value;
-            });
-          }
+  String _salario(BuildContext context) {
+    final min = puesto['salario_min'];
+    final max = puesto['salario_max'];
+    final moneda = puesto['moneda']?.toString() ?? 'PEN';
+    String fmt(dynamic v) {
+      final n = v is num
+          ? v.toDouble()
+          : double.tryParse(v.toString().replaceAll(',', '.'));
+      if (n == null) return v.toString();
+      return n == n.roundToDouble()
+          ? n.toInt().toString()
+          : n.toStringAsFixed(2);
+    }
 
-          final bool isAbierto = displayPuesto['estado'] == 'abierto';
+    if (min == null && max == null) return context.tr('salario.na');
+    if (min != null && max != null) return '${fmt(min)} - ${fmt(max)} $moneda';
+    return '${fmt(min ?? max)} $moneda';
+  }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+  String _contrato(BuildContext context) {
+    final tipo = puesto['tipo_contrato']?.toString() ?? '';
+    if (tipo.isEmpty) return context.tr('contrato.na');
+    final key = 'contrato.$tipo';
+    final label = context.tr(key);
+    return label == key ? tipo.replaceAll('_', ' ') : label;
+  }
+
+  String get _fechaPublicacion {
+    final raw = puesto['fecha_publicacion']?.toString();
+    if (raw == null || raw.isEmpty) return '';
+    final date = DateTime.tryParse(raw);
+    if (date == null) return raw.split('T').first;
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final estadoActual = puesto['estado']?.toString() ?? 'abierto';
+    final isAbierto = estadoActual == 'abierto';
+    final requisitos = (puesto['requisitos'] as List?) ?? const [];
+    final titulo = puesto['titulo']?.toString() ?? '—';
+
+    return PageContainer(
+      maxWidth: 860,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(
+          MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+          20,
+          MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+          32,
+        ),
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 430;
+              final identity = Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InitialsAvatar(
+                    name: titulo,
+                    size: 52,
+                    fallbackIcon: Icons.work_outline,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (displayPuesto['empresa'] != null &&
-                            displayPuesto['empresa'] is Map)
+                        Text(
+                          titulo,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        if (_fechaPublicacion.isNotEmpty) ...[
+                          const SizedBox(height: 3),
                           Text(
-                            displayPuesto['empresa']['nombre'] ??
-                                'Empresa no disponible',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        const SizedBox(height: 8.0),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on, size: 24.0),
-                            const SizedBox(width: 8.0),
-                            Expanded(
-                              child: Text(
-                                (displayPuesto['ubicacion'] != null &&
-                                        displayPuesto['ubicacion']
-                                            .toString()
-                                            .isNotEmpty)
-                                    ? displayPuesto['ubicacion'].toString()
-                                    : 'Ubicación no disponible',
-                                style: const TextStyle(
-                                    fontSize: 24.0,
-                                    fontWeight: FontWeight.bold),
-                              ),
+                            '${context.t('jobs.published')} $_fechaPublicacion',
+                            style: TextStyle(
+                              color: c.inkMuted,
+                              fontSize: 13.5,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12.0),
-                        Wrap(
-                          spacing: 8.0,
-                          runSpacing: 8.0,
-                          children: [
-                            if (displayPuesto['tipo_contrato'] != null &&
-                                displayPuesto['tipo_contrato']
-                                    .toString()
-                                    .isNotEmpty)
-                              Chip(
-                                avatar:
-                                    const Icon(Icons.work_outline, size: 16),
-                                label: Text(
-                                  () {
-                                    final tipo = displayPuesto['tipo_contrato']
-                                        .toString();
-                                    if (tipo == 'tiempo_completo') {
-                                      return 'Tiempo Completo';
-                                    } else if (tipo == 'medio_tiempo') {
-                                      return 'Medio Tiempo';
-                                    }
-                                    return tipo;
-                                  }(),
-                                ),
-                              ),
-                            if (displayPuesto['salario_min'] != null ||
-                                displayPuesto['salario_max'] != null)
-                              Chip(
-                                avatar:
-                                    const Icon(Icons.attach_money, size: 16),
-                                label: Text(
-                                    "\$${displayPuesto['salario_min'] ?? 0} - \$${displayPuesto['salario_max'] ?? 0}"),
-                              ),
-                            if (displayPuesto['estado'] != null)
-                              Chip(
-                                avatar:
-                                    const Icon(Icons.info_outline, size: 16),
-                                label: SizedBox(
-                                  width: 90,
-                                  child: Center(
-                                      child: Text(displayPuesto['estado'])),
-                                ),
-                                backgroundColor: isAbierto
-                                    ? Colors.green[100]
-                                    : Colors.red[300],
-                              ),
-                            if (displayPuesto['fecha_publicacion'] != null)
-                              Chip(
-                                avatar:
-                                    const Icon(Icons.calendar_today, size: 16),
-                                label: SizedBox(
-                                  width: 90,
-                                  child: Center(
-                                    child: Text(
-                                      (() {
-                                        try {
-                                          final date = DateTime.parse(
-                                              displayPuesto[
-                                                  'fecha_publicacion']);
-                                          return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-                                        } catch (e) {
-                                          return displayPuesto[
-                                                  'fecha_publicacion']
-                                              .toString()
-                                              .split('T')[0];
-                                        }
-                                      })(),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 16.0),
-                if (displayPuesto['estado'] != null)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _cambiarEstado(displayPuesto),
-                      icon: Icon(isAbierto
-                          ? Icons.lock_outline
-                          : Icons.lock_open_outlined),
-                      label:
-                          Text(isAbierto ? 'Cerrar Oferta' : 'Reabrir Oferta'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isAbierto ? Colors.redAccent : Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        textStyle: const TextStyle(fontSize: 16),
+                ],
+              );
+              if (compact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    identity,
+                    const SizedBox(height: 10),
+                    StatusChip(label: estadoActual),
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: identity),
+                  const SizedBox(width: 12),
+                  StatusChip(label: estadoActual),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MetaChip(
+                icon: Icons.location_on_outlined,
+                label: puesto['ubicacion']?.toString().isNotEmpty == true
+                    ? puesto['ubicacion'].toString()
+                    : context.t('common.not_specified_f'),
+              ),
+              _MetaChip(icon: Icons.badge_outlined, label: _contrato(context)),
+              _MetaChip(
+                icon: Icons.payments_outlined,
+                label: _salario(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          SectionLabel(title: context.t('jobs.description')),
+          Text(
+            puesto['descripcion']?.toString() ?? '—',
+            style: TextStyle(color: c.ink, height: 1.55, fontSize: 14.5),
+          ),
+          if (requisitos.isNotEmpty) ...[
+            const SizedBox(height: 22),
+            SectionLabel(title: context.t('jobs.requirements')),
+            ...requisitos.map((req) {
+              final texto = req is Map
+                  ? (req['descripcion']?.toString() ?? '')
+                  : req.toString();
+              final obligatorio = req is Map && req['es_obligatorio'] == true;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      obligatorio
+                          ? Icons.check_circle
+                          : Icons.check_circle_outline,
+                      size: 19,
+                      color: obligatorio ? c.brand : c.inkFaint,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        texto,
+                        style:
+                            TextStyle(color: c.ink, height: 1.4, fontSize: 14),
                       ),
                     ),
-                  ),
-                const SizedBox(height: 16.0),
-                const Text(
-                  'Descripción del Puesto',
-                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                    if (!obligatorio)
+                      Text(
+                        context.t('jobs.desirable'),
+                        style: TextStyle(
+                          color: c.inkFaint,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 8.0),
-                Text(displayPuesto['descripcion'] ??
-                    'No hay descripción disponible.'),
-                if (displayPuesto['requisitos'] != null &&
-                    (displayPuesto['requisitos'] as List).isNotEmpty) ...[
-                  const SizedBox(height: 16.0),
-                  const Text(
-                    'Requisitos',
-                    style:
-                        TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8.0),
-                  ...(displayPuesto['requisitos'] as List).map((req) {
-                    String textoReq = '';
-                    if (req is Map) {
-                      textoReq = req['descripcion'] ?? '';
-                    } else {
-                      textoReq = req.toString();
-                    }
-                    return ListTile(
-                      leading: const Icon(Icons.check_circle_outline, size: 20),
-                      title: Text(textoReq),
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
+              );
+            }),
+          ],
+          const SizedBox(height: 20),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 560;
+              final editar = OutlinedButton.icon(
+                onPressed: onEditar,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(context.t('jobs.edit')),
+              );
+              final estado = isAbierto
+                  ? OutlinedButton.icon(
+                      onPressed: onCambiarEstado,
+                      icon: const Icon(Icons.lock_outline, size: 18),
+                      label: Text(context.t('jobs.close')),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: c.danger,
+                        side: BorderSide(
+                          color: c.danger.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    )
+                  : FilledButton.icon(
+                      onPressed: onCambiarEstado,
+                      icon: const Icon(Icons.lock_open_outlined, size: 18),
+                      label: Text(context.t('jobs.reopen')),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: c.success,
+                      ),
                     );
-                  }),
+
+              if (!isWide) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [editar, const SizedBox(height: 10), estado],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: editar),
+                  const SizedBox(width: 12),
+                  Expanded(child: estado),
                 ],
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    PuestoCandidatosPage(puesto: widget.puesto),
-              ),
-            );
-          },
-          child: const Text('Ver Postulantes de esta Oferta'),
-        ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final maxWidth =
+        (MediaQuery.sizeOf(context).width - 64).clamp(160.0, 520.0).toDouble();
+    return Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: c.surfaceAlt,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: c.inkMuted),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: c.inkMuted,
+            ),
+          ),
+        ],
       ),
     );
   }

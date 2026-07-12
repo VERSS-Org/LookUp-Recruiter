@@ -3,48 +3,93 @@ import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
 import 'package:lookup_flutter/services/profile_service.dart';
 import 'package:lookup_flutter/services/postulacion_service.dart';
-import 'package:lookup_flutter/services/metricas_service.dart';
 import 'package:lookup_flutter/services/puesto_service.dart';
 import 'package:lookup_flutter/services/contacto_service.dart';
+import 'package:lookup_flutter/services/locale_controller.dart';
+import 'package:lookup_flutter/services/theme_controller.dart';
 import 'package:lookup_flutter/Auth/views/Login.dart';
 import 'package:lookup_flutter/Auth/views/Registro.dart';
 import 'package:lookup_flutter/Auth/views/RecuperarContrasenia.dart';
 import 'package:lookup_flutter/BarraNavegacion.dart';
-import 'package:lookup_flutter/Puesto/views/GestionarOfertas.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final ThemeController _themeController;
+  late final LocaleController _localeController;
+  late final ProfileService _profileService;
+  late final PostulacionService _postulacionService;
+  late final PuestoService _puestoService;
+  late final ContactoService _contactoService;
+  late final AuthService _authService;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeController = ThemeController();
+    _localeController = LocaleController();
+    _profileService = ProfileService();
+    _postulacionService = PostulacionService();
+    _puestoService = PuestoService();
+    _contactoService = ContactoService();
+    _authService = AuthService(onSessionCleared: _clearSessionData);
+  }
+
+  void _clearSessionData() {
+    _profileService.clearData();
+    _postulacionService.clearData();
+    _puestoService.clearData();
+    _contactoService.clearData();
+  }
+
+  @override
+  void dispose() {
+    _authService.dispose();
+    _profileService.dispose();
+    _postulacionService.dispose();
+    _puestoService.dispose();
+    _contactoService.dispose();
+    _localeController.dispose();
+    _themeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => AuthService()),
-        ChangeNotifierProvider(create: (context) => ProfileService()),
-        ChangeNotifierProvider(create: (context) => PostulacionService()),
-        ChangeNotifierProvider(create: (context) => MetricasService()),
-        ChangeNotifierProvider(create: (context) => PuestoService()),
-        ChangeNotifierProvider(create: (context) => ContactoService()),
+        ChangeNotifierProvider.value(value: _themeController),
+        ChangeNotifierProvider.value(value: _localeController),
+        ChangeNotifierProvider.value(value: _authService),
+        ChangeNotifierProvider.value(value: _profileService),
+        ChangeNotifierProvider.value(value: _postulacionService),
+        ChangeNotifierProvider.value(value: _puestoService),
+        ChangeNotifierProvider.value(value: _contactoService),
       ],
-      child: Consumer<AuthService>(
-        builder: (context, authService, child) {
+      child: Consumer2<ThemeController, LocaleController>(
+        builder: (context, themeController, localeController, child) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'LookUp',
-            theme: buildLookUpTheme(),
+            title: 'LookUp Empresas',
+            theme: buildLookUpTheme(Brightness.light),
+            darkTheme: buildLookUpTheme(Brightness.dark),
+            themeMode: themeController.mode,
             home: const SessionGate(),
-            // Define las rutas nombradas de la aplicación
             routes: {
-              '/home': (context) => const BarraNavegacion(),
+              '/home': (context) => const AuthenticatedShell(),
               '/login': (context) => const Login(),
               '/registro': (context) => const Registro(),
               '/recuperar': (context) => const RecuperarContrasenia(),
-              '/ofertas': (context) => const GestionarOfertas(),
             },
           );
         },
@@ -53,6 +98,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// Restaura la sesion guardada y decide entre login y el shell de empresa.
 class SessionGate extends StatefulWidget {
   const SessionGate({super.key});
 
@@ -74,6 +120,7 @@ class _SessionGateState extends State<SessionGate> {
     final restored = await authService.tryAutoLogin();
     if (!restored) return false;
     if (authService.role != 'empresa') {
+      // Esta app es solo para cuentas de empresa.
       await authService.logout();
       return false;
     }
@@ -82,15 +129,30 @@ class _SessionGateState extends State<SessionGate> {
 
   @override
   Widget build(BuildContext context) {
+    final isAuthenticated = context.watch<AuthService>().isAuthenticated;
     return FutureBuilder<bool>(
       future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const SplashScreen();
         }
-        return snapshot.data == true ? const BarraNavegacion() : const Login();
+        return snapshot.data == true && isAuthenticated
+            ? const BarraNavegacion()
+            : const Login();
       },
     );
+  }
+}
+
+/// Evita dejar visible el shell si la sesión expira durante el uso.
+class AuthenticatedShell extends StatelessWidget {
+  const AuthenticatedShell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return context.watch<AuthService>().isAuthenticated
+        ? const BarraNavegacion()
+        : const Login();
   }
 }
 
@@ -99,39 +161,29 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: kBrandGradient),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.16),
-                      blurRadius: 30,
-                      offset: const Offset(0, 14),
-                    ),
-                  ],
-                ),
-                child: Image.asset('assets/images/logo_lookup.png', width: 140),
+      backgroundColor: c.background,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/logo_lookup.png', width: 150),
+            const SizedBox(height: 30),
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                color: c.brand,
               ),
-              const SizedBox(height: 28),
-              const SizedBox(
-                width: 26,
-                height: 26,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.6,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              context.t('app.tagline'),
+              style: TextStyle(color: c.inkMuted, fontWeight: FontWeight.w500),
+            ),
+          ],
         ),
       ),
     );
