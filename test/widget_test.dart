@@ -53,14 +53,44 @@ Widget _testShell() {
 }
 
 void main() {
-  testWidgets('shows the recruiter login screen', (WidgetTester tester) async {
+  testWidgets('desktop login uses one centered form without a side panel', (
+    WidgetTester tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
+    _setViewport(tester, const Size(1440, 900));
 
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
     expect(find.text('Bienvenido a LookUp'), findsOneWidget);
     expect(find.text('Iniciar Sesión'), findsOneWidget);
+    expect(find.text('Portal de empresas'), findsNothing);
+    expect(find.byType(BrandMark), findsOneWidget);
+    expect(
+      tester.getCenter(find.text('Bienvenido a LookUp')).dx,
+      closeTo(720, 1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('registration is a plain form with a normal login link', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    _setViewport(tester, const Size(360, 800));
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Regístrate'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Crear cuenta de empresa'), findsOneWidget);
+    expect(find.text('Empieza a publicar vacantes'), findsNothing);
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.byType(BrandMark), findsOneWidget);
+    expect(find.byType(InlinePromptLink), findsOneWidget);
+    expect(find.text('Inicia sesión'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('mobile shell keeps messages left and alerts by profile', (
