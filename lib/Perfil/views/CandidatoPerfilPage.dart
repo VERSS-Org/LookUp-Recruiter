@@ -7,9 +7,14 @@ import 'package:lookup_flutter/theme/lookup_widgets.dart';
 /// Perfil público de un postulante visto por la empresa: datos de contacto y
 /// perfil profesional extendido (experiencia, educación, habilidades, etc.).
 class CandidatoPerfilPage extends StatefulWidget {
-  const CandidatoPerfilPage({super.key, required this.cuentaId});
+  const CandidatoPerfilPage({
+    super.key,
+    required this.cuentaId,
+    this.profileLoader,
+  });
 
   final String cuentaId;
+  final Future<Map<String, dynamic>?> Function(String cuentaId)? profileLoader;
 
   @override
   State<CandidatoPerfilPage> createState() => _CandidatoPerfilPageState();
@@ -26,6 +31,9 @@ class _CandidatoPerfilPageState extends State<CandidatoPerfilPage> {
 
   Future<Map<String, dynamic>?> _fetch() async {
     try {
+      if (widget.profileLoader != null) {
+        return widget.profileLoader!(widget.cuentaId);
+      }
       final response = await ApiService().get('iam/cuenta/${widget.cuentaId}');
       return response is Map ? Map<String, dynamic>.from(response) : null;
     } catch (_) {
@@ -68,91 +76,100 @@ class _CandidatoPerfilPageState extends State<CandidatoPerfilPage> {
           final descripcion = perfil['descripcion']?.toString() ?? '';
           final habilidades = (perfil['habilidades'] as List?) ?? const [];
 
-          return PageContainer(
-            maxWidth: 760,
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                22,
-                MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                32,
-              ),
-              children: [
-                ProfileBanner(
-                  avatar: InitialsAvatar(
-                    name: nombre,
-                    size: 88,
-                    imageUrl: cuenta['foto_url']?.toString(),
+          return ListView(
+            key: const ValueKey('candidate-profile-page-scroll'),
+            padding: EdgeInsets.zero,
+            children: [
+              PageContainer(
+                maxWidth: 760,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+                    22,
+                    MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+                    32,
                   ),
-                  title: nombre,
-                  subtitle: [
-                    if ((cuenta['carrera']?.toString() ?? '').isNotEmpty)
-                      cuenta['carrera'].toString(),
-                    if ((cuenta['ciudad']?.toString() ?? '').isNotEmpty)
-                      cuenta['ciudad'].toString(),
-                  ].join(' · '),
-                  caption: cuenta['email']?.toString() ?? '',
-                ),
-                if (descripcion.isNotEmpty) ...[
-                  const SizedBox(height: 22),
-                  SectionLabel(title: context.t('candprofile.about')),
-                  Text(
-                    descripcion,
-                    style:
-                        TextStyle(color: c.ink, height: 1.55, fontSize: 14.5),
-                  ),
-                ],
-                _EntrySection(
-                  title: context.t('candprofile.experience'),
-                  icon: Icons.work_outline,
-                  entries: perfil['experiencia'],
-                  titleKey: 'puesto',
-                  subtitleKeys: const ['organizacion', 'periodo'],
-                  bodyKey: 'descripcion',
-                ),
-                _EntrySection(
-                  title: context.t('candprofile.education'),
-                  icon: Icons.school_outlined,
-                  entries: perfil['educacion'],
-                  titleKey: 'titulo',
-                  subtitleKeys: const ['institucion', 'periodo'],
-                ),
-                _EntrySection(
-                  title: context.t('candprofile.certificates'),
-                  icon: Icons.verified_outlined,
-                  entries: perfil['certificados'],
-                  titleKey: 'nombre',
-                  subtitleKeys: const ['anio'],
-                ),
-                if (habilidades.isNotEmpty) ...[
-                  SectionLabel(title: context.t('candprofile.skills')),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (final habilidad in habilidades)
-                        Chip(label: Text(habilidad.toString())),
+                      ProfileBanner(
+                        avatar: InitialsAvatar(
+                          name: nombre,
+                          size: 88,
+                          imageUrl: cuenta['foto_url']?.toString(),
+                        ),
+                        title: nombre,
+                        subtitle: [
+                          if ((cuenta['carrera']?.toString() ?? '').isNotEmpty)
+                            cuenta['carrera'].toString(),
+                          if ((cuenta['ciudad']?.toString() ?? '').isNotEmpty)
+                            cuenta['ciudad'].toString(),
+                        ].join(' · '),
+                        caption: cuenta['email']?.toString() ?? '',
+                      ),
+                      if (descripcion.isNotEmpty) ...[
+                        const SizedBox(height: 22),
+                        SectionLabel(title: context.t('candprofile.about')),
+                        Text(
+                          descripcion,
+                          style: TextStyle(
+                              color: c.ink, height: 1.55, fontSize: 14.5),
+                        ),
+                      ],
+                      _EntrySection(
+                        title: context.t('candprofile.experience'),
+                        icon: Icons.work_outline,
+                        entries: perfil['experiencia'],
+                        titleKey: 'puesto',
+                        subtitleKeys: const ['organizacion', 'periodo'],
+                        bodyKey: 'descripcion',
+                      ),
+                      _EntrySection(
+                        title: context.t('candprofile.education'),
+                        icon: Icons.school_outlined,
+                        entries: perfil['educacion'],
+                        titleKey: 'titulo',
+                        subtitleKeys: const ['institucion', 'periodo'],
+                      ),
+                      _EntrySection(
+                        title: context.t('candprofile.certificates'),
+                        icon: Icons.verified_outlined,
+                        entries: perfil['certificados'],
+                        titleKey: 'nombre',
+                        subtitleKeys: const ['anio'],
+                      ),
+                      if (habilidades.isNotEmpty) ...[
+                        SectionLabel(title: context.t('candprofile.skills')),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final habilidad in habilidades)
+                              Chip(label: Text(habilidad.toString())),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                      _EntrySection(
+                        title: context.t('candprofile.languages'),
+                        icon: Icons.translate_outlined,
+                        entries: perfil['idiomas'],
+                        titleKey: 'idioma',
+                        subtitleKeys: const ['nivel'],
+                      ),
+                      _EntrySection(
+                        title: context.t('candprofile.extras'),
+                        icon: Icons.star_outline,
+                        entries: perfil['extras'],
+                        titleKey: 'titulo',
+                        subtitleKeys: const [],
+                        bodyKey: 'descripcion',
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                ],
-                _EntrySection(
-                  title: context.t('candprofile.languages'),
-                  icon: Icons.translate_outlined,
-                  entries: perfil['idiomas'],
-                  titleKey: 'idioma',
-                  subtitleKeys: const ['nivel'],
                 ),
-                _EntrySection(
-                  title: context.t('candprofile.extras'),
-                  icon: Icons.star_outline,
-                  entries: perfil['extras'],
-                  titleKey: 'titulo',
-                  subtitleKeys: const [],
-                  bodyKey: 'descripcion',
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),

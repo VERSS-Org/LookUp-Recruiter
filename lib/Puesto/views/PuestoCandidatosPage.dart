@@ -44,11 +44,6 @@ class _CandidatosViewState extends State<CandidatosView>
     final resultado = postulaciones.where((p) {
       if (_estadoFiltro == 'todos') return true;
       final estado = canonicalEstado((p['estado'] ?? 'pendiente').toString());
-      if (_estadoFiltro == 'activos') {
-        return estado != 'rechazado' &&
-            estado != 'oferta' &&
-            estado != 'aceptado';
-      }
       if (_estadoFiltro == 'aceptado') {
         return estado == 'aceptado' || estado == 'oferta';
       }
@@ -121,8 +116,12 @@ class _CandidatosViewState extends State<CandidatosView>
                       label: Text(context.t('cand.all')),
                     ),
                     ButtonSegment(
-                      value: 'activos',
-                      label: Text(context.t('cand.active')),
+                      value: 'pendiente',
+                      label: Text(context.t('estado.pendiente')),
+                    ),
+                    ButtonSegment(
+                      value: 'en_revision',
+                      label: Text(context.t('estado.en_revision')),
                     ),
                     ButtonSegment(
                       value: 'entrevista',
@@ -366,33 +365,11 @@ class _CandidatoRow extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: estadoActual,
-                  decoration: InputDecoration(
-                    labelText: context.t('cand.status'),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                  items: estadosDisponibles.map((value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(
-                        estadoStyle(context, value).label,
-                        style: const TextStyle(fontSize: 13.5),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: estadosDisponibles.length <= 1 || isUpdating
-                      ? null
-                      : (newValue) {
-                          if (newValue != null && newValue != estadoActual) {
-                            onCambiarEstado(newValue);
-                          }
-                        },
-                ),
+              _StatusMenu(
+                current: estadoActual,
+                options: estadosDisponibles,
+                enabled: estadosDisponibles.length > 1 && !isUpdating,
+                onSelected: onCambiarEstado,
               ),
               if (isUpdating) ...[
                 const SizedBox(width: 8),
@@ -428,6 +405,72 @@ class _CandidatoRow extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusMenu extends StatelessWidget {
+  const _StatusMenu({
+    required this.current,
+    required this.options,
+    required this.enabled,
+    required this.onSelected,
+  });
+
+  final String current;
+  final List<String> options;
+  final bool enabled;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = estadoStyle(context, current);
+    return PopupMenuButton<String>(
+      key: const ValueKey('candidate-status-menu'),
+      enabled: enabled,
+      tooltip: context.t('cand.status'),
+      initialValue: current,
+      constraints: const BoxConstraints(minWidth: 190, maxWidth: 240),
+      position: PopupMenuPosition.under,
+      onSelected: (value) {
+        if (value != current) onSelected(value);
+      },
+      itemBuilder: (context) => [
+        for (final value in options)
+          PopupMenuItem<String>(
+            value: value,
+            height: 44,
+            child: Row(
+              children: [
+                Icon(
+                  value == current
+                      ? Icons.check
+                      : estadoStyle(context, value).icon,
+                  size: 18,
+                  color: value == current
+                      ? context.colors.brand
+                      : context.colors.inkFaint,
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    estadoStyle(context, value).label,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: IgnorePointer(
+        child: OutlinedButton.icon(
+          key: const ValueKey('candidate-status-trigger'),
+          onPressed: enabled ? () {} : null,
+          icon: Icon(style.icon, size: 18, color: style.color),
+          label: Text(style.label),
+          iconAlignment: IconAlignment.start,
+        ),
       ),
     );
   }
