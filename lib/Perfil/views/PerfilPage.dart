@@ -90,159 +90,170 @@ class _PerfilPageState extends State<PerfilPage> {
                 )
               : PageContainer(
                   maxWidth: 760,
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                      22,
-                      MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                      32,
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context).copyWith(
+                      scrollbars: false,
                     ),
-                    children: [
-                      if (profileService.errorMessage != null) ...[
-                        ErrorBanner(
-                          message: context.t('profile.load.error'),
-                          actionLabel: context.t('common.retry'),
-                          onAction: _loadProfile,
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      ProfileBanner(
-                        avatar: InitialsAvatar(
-                          name: nombre,
-                          size: 88,
-                          imageUrl: profile['foto_url']?.toString(),
-                          fallbackIcon: Icons.business_outlined,
-                        ),
-                        title: nombre,
-                        subtitle: [
-                          if ((profile['ciudad']?.toString() ?? '').isNotEmpty)
-                            profile['ciudad'].toString(),
-                        ].join(' · '),
-                        caption: profile['email']?.toString() ?? '',
-                        action: OutlinedButton.icon(
-                          icon:
-                              const Icon(Icons.photo_camera_outlined, size: 17),
-                          label: Text(context.t('profile.change_logo')),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 36),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: ListView(
+                      key: const ValueKey('company-profile-scroll'),
+                      padding: EdgeInsets.fromLTRB(
+                        MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+                        22,
+                        MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+                        32,
+                      ),
+                      children: [
+                        if (profileService.errorMessage != null) ...[
+                          ErrorBanner(
+                            message: context.t('profile.load.error'),
+                            actionLabel: context.t('common.retry'),
+                            onAction: _loadProfile,
                           ),
-                          onPressed: () => _showPhotoDialog(context),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SectionLabel(
-                        title: context.t('profile.about'),
-                        actionLabel: context.t('profile.edit'),
-                        onAction: () =>
-                            _editarDescripcion(context, perfil, descripcion),
-                      ),
-                      Text(
-                        descripcion.isEmpty
-                            ? context.t('profile.about.hint')
-                            : descripcion,
-                        style: TextStyle(
-                          color: descripcion.isEmpty ? c.inkFaint : c.ink,
-                          height: 1.5,
-                          fontSize: 14.5,
-                          fontStyle:
-                              descripcion.isEmpty ? FontStyle.italic : null,
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      SectionLabel(title: context.t('profile.details')),
-                      InfoRow(
-                        icon: Icons.email_outlined,
-                        label: context.t('auth.email'),
-                        value: profile['email']?.toString() ?? '—',
-                      ),
-                      InfoRow(
-                        icon: Icons.phone_outlined,
-                        label: context.t('profile.phone'),
-                        value: (profile['telefono']?.toString() ?? '').isEmpty
-                            ? context.t('common.not_specified')
-                            : profile['telefono'].toString(),
-                      ),
-                      InfoRow(
-                        icon: Icons.location_on_outlined,
-                        label: context.t('profile.city'),
-                        value: (profile['ciudad']?.toString() ?? '').isEmpty
-                            ? context.t('common.not_specified_f')
-                            : profile['ciudad'].toString(),
-                      ),
-                      const SizedBox(height: 22),
-                      SectionLabel(title: context.t('settings.title')),
-                      Text(
-                        context.t('settings.theme'),
-                        style: TextStyle(fontSize: 13.5, color: c.inkMuted),
-                      ),
-                      const SizedBox(height: 8),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SegmentedButton<ThemeMode>(
-                          segments: [
-                            ButtonSegment(
-                              value: ThemeMode.light,
-                              label: Text(context.t('settings.theme.light')),
-                              icon: const Icon(Icons.light_mode_outlined,
-                                  size: 17),
-                            ),
-                            ButtonSegment(
-                              value: ThemeMode.dark,
-                              label: Text(context.t('settings.theme.dark')),
-                              icon: const Icon(Icons.dark_mode_outlined,
-                                  size: 17),
-                            ),
-                            ButtonSegment(
-                              value: ThemeMode.system,
-                              label: Text(context.t('settings.theme.system')),
-                              icon: const Icon(
-                                Icons.brightness_auto_outlined,
-                                size: 17,
-                              ),
-                            ),
-                          ],
-                          selected: {themeController.mode},
-                          onSelectionChanged: (selection) =>
-                              themeController.setMode(selection.first),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        context.t('settings.language'),
-                        style: TextStyle(fontSize: 13.5, color: c.inkMuted),
-                      ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(value: 'es', label: Text('Español')),
-                          ButtonSegment(value: 'en', label: Text('English')),
+                          const SizedBox(height: 12),
                         ],
-                        selected: {localeController.language},
-                        onSelectionChanged: (selection) =>
-                            localeController.setLanguage(selection.first),
-                      ),
-                      const SizedBox(height: 24),
-                      SectionLabel(title: context.t('settings.security')),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.lock_outline),
-                        label: Text(context.t('settings.change_password')),
-                        onPressed: () =>
-                            _showChangePasswordDialog(context, authService),
-                      ),
-                      const SizedBox(height: 10),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.logout),
-                        label: Text(context.t('nav.logout')),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: c.danger,
-                          side: BorderSide(
-                              color: c.danger.withValues(alpha: 0.4)),
+                        ProfileBanner(
+                          avatar: InitialsAvatar(
+                            name: nombre,
+                            size: 88,
+                            imageUrl: profile['foto_url']?.toString(),
+                            fallbackIcon: Icons.business_outlined,
+                          ),
+                          title: nombre,
+                          subtitle: [
+                            if ((profile['ciudad']?.toString() ?? '')
+                                .isNotEmpty)
+                              profile['ciudad'].toString(),
+                          ].join(' · '),
+                          caption: profile['email']?.toString().trim() ?? '',
+                          action: OutlinedButton.icon(
+                            icon: const Icon(Icons.photo_camera_outlined,
+                                size: 17),
+                            label: Text(context.t('profile.change_logo')),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                            onPressed: () => _showPhotoDialog(context),
+                          ),
                         ),
-                        onPressed: () =>
-                            _showLogoutDialog(context, authService),
-                      ),
-                    ],
+                        const SizedBox(height: 24),
+                        SectionLabel(
+                          title: context.t('profile.about'),
+                          actionLabel: context.t('profile.edit'),
+                          onAction: () =>
+                              _editarDescripcion(context, perfil, descripcion),
+                        ),
+                        Text(
+                          descripcion.isEmpty
+                              ? context.t('profile.about.hint')
+                              : descripcion,
+                          style: TextStyle(
+                            color: descripcion.isEmpty ? c.inkFaint : c.ink,
+                            height: 1.5,
+                            fontSize: 14.5,
+                            fontStyle:
+                                descripcion.isEmpty ? FontStyle.italic : null,
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        SectionLabel(title: context.t('profile.details')),
+                        InfoRow(
+                          key: const ValueKey('company-email-row'),
+                          icon: Icons.email_outlined,
+                          label: context.t('auth.email'),
+                          value: profile['email']?.toString().trim() ?? '—',
+                        ),
+                        InfoRow(
+                          key: const ValueKey('company-phone-row'),
+                          icon: Icons.phone_outlined,
+                          label: context.t('profile.phone'),
+                          value: (profile['telefono']?.toString() ?? '').isEmpty
+                              ? context.t('common.not_specified')
+                              : profile['telefono'].toString().trim(),
+                        ),
+                        InfoRow(
+                          key: const ValueKey('company-city-row'),
+                          icon: Icons.location_on_outlined,
+                          label: context.t('profile.city'),
+                          value: (profile['ciudad']?.toString() ?? '').isEmpty
+                              ? context.t('common.not_specified_f')
+                              : profile['ciudad'].toString().trim(),
+                        ),
+                        const SizedBox(height: 22),
+                        SectionLabel(title: context.t('settings.title')),
+                        Text(
+                          context.t('settings.theme'),
+                          style: TextStyle(fontSize: 13.5, color: c.inkMuted),
+                        ),
+                        const SizedBox(height: 8),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SegmentedButton<ThemeMode>(
+                            segments: [
+                              ButtonSegment(
+                                value: ThemeMode.light,
+                                label: Text(context.t('settings.theme.light')),
+                                icon: const Icon(Icons.light_mode_outlined,
+                                    size: 17),
+                              ),
+                              ButtonSegment(
+                                value: ThemeMode.dark,
+                                label: Text(context.t('settings.theme.dark')),
+                                icon: const Icon(Icons.dark_mode_outlined,
+                                    size: 17),
+                              ),
+                              ButtonSegment(
+                                value: ThemeMode.system,
+                                label: Text(context.t('settings.theme.system')),
+                                icon: const Icon(
+                                  Icons.brightness_auto_outlined,
+                                  size: 17,
+                                ),
+                              ),
+                            ],
+                            selected: {themeController.mode},
+                            onSelectionChanged: (selection) =>
+                                themeController.setMode(selection.first),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          context.t('settings.language'),
+                          style: TextStyle(fontSize: 13.5, color: c.inkMuted),
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(value: 'es', label: Text('Español')),
+                            ButtonSegment(value: 'en', label: Text('English')),
+                          ],
+                          selected: {localeController.language},
+                          onSelectionChanged: (selection) =>
+                              localeController.setLanguage(selection.first),
+                        ),
+                        const SizedBox(height: 24),
+                        SectionLabel(title: context.t('settings.security')),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.lock_outline),
+                          label: Text(context.t('settings.change_password')),
+                          onPressed: () =>
+                              _showChangePasswordDialog(context, authService),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.logout),
+                          label: Text(context.t('nav.logout')),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: c.danger,
+                            side: BorderSide(
+                                color: c.danger.withValues(alpha: 0.4)),
+                          ),
+                          onPressed: () =>
+                              _showLogoutDialog(context, authService),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
     );
@@ -255,37 +266,10 @@ class _PerfilPageState extends State<PerfilPage> {
   ) async {
     final profileService = Provider.of<ProfileService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
-    final controller = TextEditingController(text: actual);
     final resultado = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.tr('profile.about')),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: TextField(
-            controller: controller,
-            minLines: 3,
-            maxLines: 6,
-            maxLength: 600,
-            decoration: InputDecoration(
-              hintText: context.tr('profile.about.hint'),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.tr('common.cancel')),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, controller.text.trim()),
-            child: Text(context.tr('common.save')),
-          ),
-        ],
-      ),
+      builder: (_) => _EditDescriptionDialog(initialValue: actual),
     );
-    controller.dispose();
     if (resultado != null && context.mounted && authService.cuentaId != null) {
       final success =
           await profileService.updateProfile(authService.cuentaId!, {
@@ -307,123 +291,16 @@ class _PerfilPageState extends State<PerfilPage> {
     AuthService authService,
     Map<String, dynamic> profile,
   ) async {
+    final cuentaId = authService.cuentaId;
+    if (cuentaId == null) return;
     final profileService = Provider.of<ProfileService>(context, listen: false);
-    final nameController =
-        TextEditingController(text: profile['nombre_completo']?.toString());
-    final phoneController =
-        TextEditingController(text: profile['telefono']?.toString());
-    final cityController =
-        TextEditingController(text: profile['ciudad']?.toString());
-    final formKey = GlobalKey<FormState>();
-
     await showDialog(
       context: context,
-      builder: (dialogContext) {
-        bool isSaving = false;
-        String? errorMessage;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(context.tr('profile.edit')),
-              content: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Form(
-                  key: formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          controller: nameController,
-                          decoration: InputDecoration(
-                            labelText: context.tr('auth.company_name'),
-                            prefixIcon: const Icon(Icons.business_outlined),
-                          ),
-                          validator: (value) =>
-                              value == null || value.trim().isEmpty
-                                  ? context.tr('form.required')
-                                  : null,
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: phoneController,
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            labelText: context.tr('profile.phone'),
-                            prefixIcon: const Icon(Icons.phone_outlined),
-                          ),
-                        ),
-                        if (errorMessage != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            errorMessage!,
-                            style: TextStyle(
-                              color: context.colors.danger,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: cityController,
-                          decoration: InputDecoration(
-                            labelText: context.tr('profile.city'),
-                            prefixIcon: const Icon(Icons.location_on_outlined),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed:
-                      isSaving ? null : () => Navigator.pop(dialogContext),
-                  child: Text(context.tr('common.cancel')),
-                ),
-                FilledButton(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          if (!formKey.currentState!.validate()) return;
-                          final cuentaId = authService.cuentaId;
-                          if (cuentaId == null) return;
-                          setDialogState(() => isSaving = true);
-                          final success = await profileService.updateProfile(
-                            cuentaId,
-                            {
-                              'nombre_completo': nameController.text.trim(),
-                              'telefono': phoneController.text.trim(),
-                              'ciudad': cityController.text.trim(),
-                            },
-                          );
-                          if (!dialogContext.mounted) return;
-                          setDialogState(() => isSaving = false);
-                          if (success) Navigator.pop(dialogContext);
-                          if (!success) {
-                            setDialogState(() {
-                              errorMessage = context.tr('profile.update.error');
-                            });
-                          }
-                        },
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(context.tr('common.save')),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (_) => _EditCompanyProfileDialog(
+        profile: profile,
+        onSave: (updates) => profileService.updateProfile(cuentaId, updates),
+      ),
     );
-    nameController.dispose();
-    phoneController.dispose();
-    cityController.dispose();
   }
 
   Future<void> _showPhotoDialog(BuildContext context) async {
@@ -440,147 +317,16 @@ class _PerfilPageState extends State<PerfilPage> {
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     final rootMessenger = ScaffoldMessenger.of(context);
     final successMessage = context.tr('settings.password.updated.login');
-    final actualController = TextEditingController();
-    final nuevaController = TextEditingController();
-    final confirmController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    String? validarFuerte(String? password) {
-      if (password == null || password.length < 8) {
-        return context.tr('auth.password.hint');
-      }
-      final ok = password.contains(RegExp(r'[A-Z]')) &&
-          password.contains(RegExp(r'[a-z]')) &&
-          password.contains(RegExp(r'[0-9]')) &&
-          password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'));
-      return ok ? null : context.tr('auth.password.hint');
-    }
-
-    await showDialog(
+    final changed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        bool isSaving = false;
-        String? errorMessage;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(context.tr('settings.change_password')),
-              content: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Form(
-                  key: formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          controller: actualController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: context.tr('settings.password.current'),
-                            prefixIcon: const Icon(Icons.lock_outline),
-                          ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? context.tr('form.required')
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: nuevaController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: context.tr('settings.password.new'),
-                            prefixIcon: const Icon(Icons.lock_reset_outlined),
-                            helperText: context.tr('auth.password.hint'),
-                            helperMaxLines: 2,
-                          ),
-                          validator: validarFuerte,
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: confirmController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: context.tr('settings.password.confirm'),
-                            prefixIcon: const Icon(Icons.lock_reset_outlined),
-                          ),
-                          validator: (value) => value != nuevaController.text
-                              ? context.tr('auth.password.mismatch')
-                              : null,
-                        ),
-                        if (errorMessage != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            errorMessage!,
-                            style: TextStyle(
-                              color: context.colors.danger,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed:
-                      isSaving ? null : () => Navigator.pop(dialogContext),
-                  child: Text(context.tr('common.cancel')),
-                ),
-                FilledButton(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          if (!formKey.currentState!.validate()) return;
-                          setDialogState(() {
-                            isSaving = true;
-                            errorMessage = null;
-                          });
-                          final result = await authService.changePassword(
-                            actualController.text,
-                            nuevaController.text,
-                          );
-                          if (!dialogContext.mounted) return;
-                          if (result != null && result['exito'] == true) {
-                            Navigator.pop(dialogContext);
-                            await authService.logout();
-                            if (rootNavigator.mounted) {
-                              rootNavigator.pushNamedAndRemoveUntil(
-                                '/login',
-                                (route) => false,
-                              );
-                              rootMessenger.showSnackBar(
-                                SnackBar(content: Text(successMessage)),
-                              );
-                            }
-                          } else {
-                            setDialogState(() {
-                              isSaving = false;
-                              errorMessage = context.tr(
-                                'settings.password.error',
-                              );
-                            });
-                          }
-                        },
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(context.tr('common.update')),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (_) => _ChangePasswordDialog(authService: authService),
     );
-    actualController.dispose();
-    nuevaController.dispose();
-    confirmController.dispose();
+    if (changed != true) return;
+    await authService.logout();
+    if (rootNavigator.mounted) {
+      rootNavigator.pushNamedAndRemoveUntil('/login', (route) => false);
+      rootMessenger.showSnackBar(SnackBar(content: Text(successMessage)));
+    }
   }
 
   void _showLogoutDialog(BuildContext context, AuthService authService) {
@@ -615,6 +361,347 @@ class _PerfilPageState extends State<PerfilPage> {
           ],
         );
       },
+    );
+  }
+}
+
+class _EditDescriptionDialog extends StatefulWidget {
+  const _EditDescriptionDialog({required this.initialValue});
+
+  final String initialValue;
+
+  @override
+  State<_EditDescriptionDialog> createState() => _EditDescriptionDialogState();
+}
+
+class _EditDescriptionDialogState extends State<_EditDescriptionDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(context.t('profile.about')),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: TextField(
+          controller: _controller,
+          minLines: 3,
+          maxLines: 6,
+          maxLength: 600,
+          decoration: InputDecoration(
+            hintText: context.t('profile.about.hint'),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(context.t('common.cancel')),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: Text(context.t('common.save')),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChangePasswordDialog extends StatefulWidget {
+  const _ChangePasswordDialog({required this.authService});
+
+  final AuthService authService;
+
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _currentController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmationController = TextEditingController();
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    _confirmationController.dispose();
+    super.dispose();
+  }
+
+  String? _validateStrongPassword(String? password) {
+    if (password == null || password.length < 8) {
+      return context.tr('auth.password.hint');
+    }
+    final isStrong = password.contains(RegExp(r'[A-Z]')) &&
+        password.contains(RegExp(r'[a-z]')) &&
+        password.contains(RegExp(r'[0-9]')) &&
+        password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'));
+    return isStrong ? null : context.tr('auth.password.hint');
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+    final result = await widget.authService.changePassword(
+      _currentController.text,
+      _newController.text,
+    );
+    if (!mounted) return;
+    if (result != null && result['exito'] == true) {
+      Navigator.pop(context, true);
+      return;
+    }
+    setState(() {
+      _isSaving = false;
+      _errorMessage = context.tr('settings.password.error');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(context.t('settings.change_password')),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _currentController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: context.t('settings.password.current'),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                  ),
+                  validator: (value) => value == null || value.isEmpty
+                      ? context.tr('form.required')
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _newController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: context.t('settings.password.new'),
+                    prefixIcon: const Icon(Icons.lock_reset_outlined),
+                    helperText: context.t('auth.password.hint'),
+                    helperMaxLines: 2,
+                  ),
+                  validator: _validateStrongPassword,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _confirmationController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: context.t('settings.password.confirm'),
+                    prefixIcon: const Icon(Icons.lock_reset_outlined),
+                  ),
+                  validator: (value) => value != _newController.text
+                      ? context.tr('auth.password.mismatch')
+                      : null,
+                ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: context.colors.danger,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
+          child: Text(context.t('common.cancel')),
+        ),
+        FilledButton(
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(context.t('common.update')),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditCompanyProfileDialog extends StatefulWidget {
+  const _EditCompanyProfileDialog({
+    required this.profile,
+    required this.onSave,
+  });
+
+  final Map<String, dynamic> profile;
+  final Future<bool> Function(Map<String, dynamic> updates) onSave;
+
+  @override
+  State<_EditCompanyProfileDialog> createState() =>
+      _EditCompanyProfileDialogState();
+}
+
+class _EditCompanyProfileDialogState extends State<_EditCompanyProfileDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _cityController;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.profile['nombre_completo']?.toString().trim(),
+    );
+    _phoneController = TextEditingController(
+      text: widget.profile['telefono']?.toString().trim(),
+    );
+    _cityController = TextEditingController(
+      text: widget.profile['ciudad']?.toString().trim(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _cityController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+    final success = await widget.onSave({
+      'nombre_completo': _nameController.text.trim(),
+      'telefono': _phoneController.text.trim(),
+      'ciudad': _cityController.text.trim(),
+    });
+    if (!mounted) return;
+    if (success) {
+      Navigator.pop(context);
+      return;
+    }
+    setState(() {
+      _isSaving = false;
+      _errorMessage = context.tr('profile.update.error');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(context.t('profile.edit')),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  maxLength: 255,
+                  decoration: InputDecoration(
+                    labelText: context.t('auth.company_name'),
+                    prefixIcon: const Icon(Icons.business_outlined),
+                    counterText: '',
+                  ),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? context.tr('form.required')
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  key: const ValueKey('company-phone-field'),
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  maxLength: 50,
+                  decoration: InputDecoration(
+                    labelText: context.t('profile.phone'),
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    counterText: '',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  key: const ValueKey('company-city-field'),
+                  controller: _cityController,
+                  maxLength: 100,
+                  decoration: InputDecoration(
+                    labelText: context.t('profile.city'),
+                    prefixIcon: const Icon(Icons.location_on_outlined),
+                    counterText: '',
+                  ),
+                ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: context.colors.danger,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
+          child: Text(context.t('common.cancel')),
+        ),
+        FilledButton(
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(context.t('common.save')),
+        ),
+      ],
     );
   }
 }

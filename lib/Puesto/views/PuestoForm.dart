@@ -66,13 +66,14 @@ class PuestoForm extends StatefulWidget {
 
   static const List<String> monedas = ['PEN', 'USD', 'EUR'];
 
-  static const Map<String, String> tiposContrato = {
-    'tiempo_completo': 'Tiempo completo',
-    'medio_tiempo': 'Medio tiempo',
-    'temporal': 'Temporal',
-    'freelance': 'Freelance',
-    'practicas': 'Prácticas',
-  };
+  /// Valores aceptados por la API. La etiqueta visible se resuelve desde
+  /// `contrato.<valor>` para mantener el selector traducible.
+  static const List<String> tiposContrato = [
+    'tiempo_completo',
+    'medio_tiempo',
+    'practicas',
+    'temporal',
+  ];
 
   @override
   State<PuestoForm> createState() => _PuestoFormState();
@@ -101,7 +102,7 @@ class _PuestoFormState extends State<PuestoForm> {
       _tituloController.text = initial['titulo']?.toString() ?? '';
       _descripcionController.text = initial['descripcion']?.toString() ?? '';
       _selectedTipoContrato = initial['tipo_contrato']?.toString();
-      if (!PuestoForm.tiposContrato.containsKey(_selectedTipoContrato)) {
+      if (!PuestoForm.tiposContrato.contains(_selectedTipoContrato)) {
         _selectedTipoContrato = null;
       }
       final moneda = initial['moneda']?.toString();
@@ -283,11 +284,13 @@ class _PuestoFormState extends State<PuestoForm> {
                       );
                       final contractField = DropdownButtonFormField<String>(
                         initialValue: _selectedTipoContrato,
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: context.t('form.contract'),
                           prefixIcon: const Icon(Icons.assignment_outlined),
                         ),
-                        items: PuestoForm.tiposContrato.keys.map((tipo) {
+                        key: const ValueKey('vacancy-contract-field'),
+                        items: PuestoForm.tiposContrato.map((tipo) {
                           return DropdownMenuItem<String>(
                             value: tipo,
                             child: Text(context.t('contrato.$tipo')),

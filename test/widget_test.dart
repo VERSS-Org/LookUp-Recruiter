@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lookup_flutter/BarraNavegacion.dart';
+import 'package:lookup_flutter/Perfil/views/PerfilPage.dart';
+import 'package:lookup_flutter/Puesto/views/PuestoForm.dart';
 import 'package:lookup_flutter/main.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
 import 'package:lookup_flutter/services/contacto_service.dart';
@@ -11,6 +13,7 @@ import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/services/postulacion_service.dart';
 import 'package:lookup_flutter/services/profile_service.dart';
 import 'package:lookup_flutter/services/puesto_service.dart';
+import 'package:lookup_flutter/services/theme_controller.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
@@ -22,6 +25,49 @@ class _FakeContactoService extends ContactoService {
 class _FakePostulacionService extends PostulacionService {
   @override
   Future<void> fetchEventos({bool notify = true}) async {}
+}
+
+class _FakeAuthService extends AuthService {
+  @override
+  String? get cuentaId => 'empresa-test';
+}
+
+class _FakeProfileService extends ProfileService {
+  _FakeProfileService()
+      : _profile = {
+          'cuenta_id': 'empresa-test',
+          'nombre_completo': 'Empresa Prueba',
+          'email': ' empresa@lookup.test ',
+          'telefono': '+51 999 888 777',
+          'ciudad': 'Lima',
+          'perfil': <String, dynamic>{},
+        };
+
+  Map<String, dynamic> _profile;
+  Map<String, dynamic>? lastUpdates;
+
+  @override
+  Map<String, dynamic>? get profileData => _profile;
+
+  @override
+  bool get isLoading => false;
+
+  @override
+  String? get errorMessage => null;
+
+  @override
+  Future<Map<String, dynamic>?> fetchProfile(String cuentaId) async => _profile;
+
+  @override
+  Future<bool> updateProfile(
+    String cuentaId,
+    Map<String, dynamic> updates,
+  ) async {
+    lastUpdates = Map<String, dynamic>.from(updates);
+    _profile = {..._profile, ...updates};
+    notifyListeners();
+    return true;
+  }
 }
 
 void _setViewport(WidgetTester tester, Size size) {
@@ -48,6 +94,39 @@ Widget _testShell() {
     child: MaterialApp(
       theme: buildLookUpTheme(Brightness.light),
       home: const BarraNavegacion(),
+    ),
+  );
+}
+
+Widget _vacancyFormShell() {
+  return ChangeNotifierProvider(
+    create: (_) => LocaleController(),
+    child: MaterialApp(
+      theme: buildLookUpTheme(Brightness.light),
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: PuestoForm(
+            submitLabel: 'Guardar',
+            submittingLabel: 'Guardando',
+            onSubmit: (_) async => true,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _profileShell(_FakeProfileService profileService) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<AuthService>(create: (_) => _FakeAuthService()),
+      ChangeNotifierProvider<ProfileService>.value(value: profileService),
+      ChangeNotifierProvider(create: (_) => ThemeController()),
+      ChangeNotifierProvider(create: (_) => LocaleController()),
+    ],
+    child: MaterialApp(
+      theme: buildLookUpTheme(Brightness.light),
+      home: const PerfilPage(),
     ),
   );
 }
@@ -109,6 +188,13 @@ void main() {
 
     expect(chatX, lessThan(logoX));
     expect(notificationX, lessThan(profileX));
+    expect(find.text('Publicar vacante'), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Vacantes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Publicar vacante'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -130,8 +216,105 @@ void main() {
     expect(find.text('LookUp'), findsNothing);
     expect(messageX, lessThan(notificationX));
     expect(notificationX, lessThan(profileX));
+    expect(find.text('Publicar vacante'), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Vacantes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vacantes'), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('publish-vacancy-button')), findsOneWidget);
+    expect(find.text('Publicar vacante'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('mobile vacancy form exposes only the four contract types', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    _setViewport(tester, const Size(360, 800));
+
+    await tester.pumpWidget(_vacancyFormShell());
+    await tester.pumpAndSettle();
+
+    final contractField = find.byKey(
+      const ValueKey('vacancy-contract-field'),
+    );
+    await tester.ensureVisible(contractField);
+    await tester.tap(contractField);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jornada Completa'), findsOneWidget);
+    expect(find.text('Jornada Parcial'), findsOneWidget);
+    expect(find.text('Prácticas Preprofesionales'), findsOneWidget);
+    expect(find.text('Temporal'), findsOneWidget);
+    expect(find.text('Freelance'), findsNothing);
+    expect(find.text('Tiempo completo'), findsNothing);
+    expect(find.text('Medio tiempo'), findsNothing);
+    expect(find.text('Prácticas'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('desktop company profile aligns data and saves phone and city', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    _setViewport(tester, const Size(1440, 900));
+    final profileService = _FakeProfileService();
+
+    await tester.pumpWidget(_profileShell(profileService));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Scrollbar), findsNothing);
+    expect(find.text('empresa@lookup.test'), findsNWidgets(2));
+    expect(find.text(' empresa@lookup.test '), findsNothing);
+    final emailX = tester
+        .getTopLeft(
+          find.descendant(
+            of: find.byKey(const ValueKey('company-email-row')),
+            matching: find.text('empresa@lookup.test'),
+          ),
+        )
+        .dx;
+    final phoneX = tester
+        .getTopLeft(
+          find.descendant(
+            of: find.byKey(const ValueKey('company-phone-row')),
+            matching: find.text('+51 999 888 777'),
+          ),
+        )
+        .dx;
+    final cityX = tester
+        .getTopLeft(
+          find.descendant(
+            of: find.byKey(const ValueKey('company-city-row')),
+            matching: find.text('Lima'),
+          ),
+        )
+        .dx;
+    expect(phoneX, closeTo(emailX, 1));
+    expect(cityX, closeTo(emailX, 1));
+
+    await tester.tap(find.byTooltip('Editar perfil'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('company-phone-field')),
+      '+51 987 654 321',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('company-city-field')),
+      'Arequipa',
+    );
+    await tester.tap(find.text('Guardar'));
+    await tester.pumpAndSettle();
+
+    expect(profileService.lastUpdates?['telefono'], '+51 987 654 321');
+    expect(profileService.lastUpdates?['ciudad'], 'Arequipa');
+    expect(find.text('+51 987 654 321'), findsOneWidget);
+    expect(find.text('Arequipa'), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
   });
 }

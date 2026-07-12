@@ -96,13 +96,6 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
     );
   }
 
-  void _openProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const PerfilPage(showBack: true)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final unread = context.watch<ContactoService>().unreadMessages;
@@ -115,7 +108,6 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
       final pages = [
         HomeEmpresa(
           onNavigateToOfertas: () => _navigateTo(1),
-          onNavigateToProfile: () => _navigateTo(4),
         ),
         const GestionarOfertas(),
         const MensajesEmpresa(),
@@ -148,7 +140,6 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
     final pages = [
       HomeEmpresa(
         onNavigateToOfertas: () => _navigateTo(1),
-        onNavigateToProfile: _openProfile,
       ),
       const GestionarOfertas(),
     ];
