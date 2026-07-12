@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:lookup_flutter/services/api_service.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
+import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
+import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
+/// Acceso para cuentas de empresa. En escritorio muestra un panel de marca a
+/// la izquierda y el formulario a la derecha; en móvil, una sola columna.
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -15,217 +20,214 @@ class LoginState extends State<Login> {
   String _email = '';
   String _password = '';
   bool _isLoading = false;
+  bool _hidePassword = true;
   String? _errorMessage;
 
   Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final success = await authService.login(_email, _password);
+    final authService = Provider.of<AuthService>(context, listen: false);
+    try {
+      await authService.login(_email, _password);
 
       if (!mounted) return;
 
-      if (success != null) {
-        // Login exitoso - redirigir según rol
-        final rol = authService.role;
-
-        if (rol == 'empresa') {
-          // Empresas van a Home para gestionar puestos
-          Navigator.of(context)
-              .pushNamedAndRemoveUntil('/home', (route) => false);
-        } else {
-          // Si no es empresa, no se permite el login
-          setState(() {
-            _errorMessage = 'Solo se permite el acceso a cuentas de empresa.';
-            _isLoading = false;
-          });
-          authService.logout();
-        }
+      if (authService.role == 'empresa') {
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/home', (route) => false);
       } else {
+        // Esta app es solo para cuentas de empresa.
+        await authService.logout();
+        if (!mounted) return;
         setState(() {
-          _errorMessage = 'Correo o contraseña incorrectos.';
+          _errorMessage = context.tr('auth.wrong_app');
           _isLoading = false;
         });
       }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.message;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = context.tr('common.error.connection');
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewportWidth = MediaQuery.sizeOf(context).width;
-    final formWidth = viewportWidth < 700
-        ? (viewportWidth - 128).clamp(280, 320).toDouble()
-        : 440.0;
-
+    final c = context.colors;
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFE7EEFB), kSurface],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24),
-              child: SizedBox(
-                width: formWidth,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(18),
-                        margin: const EdgeInsets.only(bottom: 22),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: softShadow(opacity: 0.12, blur: 26, y: 12),
-                        ),
-                        child: Image.asset(
-                          'assets/images/logo_lookup.png',
-                          height: 60,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(26),
-                        boxShadow: softShadow(opacity: 0.10, blur: 30, y: 16),
-                      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final desktop = constraints.maxWidth >= 900;
+            final form = Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: desktop ? 48 : 24,
+                  vertical: 32,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 410),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!desktop) ...[
+                        const Center(child: BrandMark(size: 64)),
+                        const SizedBox(height: 26),
+                      ],
+                      _buildForm(context),
+                    ],
+                  ),
+                ),
+              ),
+            );
+
+            if (!desktop) return form;
+            return Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: Container(
+                    color: c.surfaceAlt,
+                    padding: const EdgeInsets.all(48),
+                    alignment: Alignment.center,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Bienvenido a LookUp',
-                            textAlign: TextAlign.center,
+                          const BrandMark(size: 92),
+                          const SizedBox(height: 36),
+                          Text(
+                            context.t('auth.company.access'),
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            context.t('app.tagline'),
                             style: TextStyle(
-                              fontSize: 23,
-                              fontWeight: FontWeight.w800,
-                              color: kInk,
-                              letterSpacing: -0.3,
+                              color: c.inkMuted,
+                              fontSize: 16,
+                              height: 1.5,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Inicia sesión para continuar',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 15, color: kInkMuted),
-                          ),
-                          const SizedBox(height: 26),
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                TextFormField(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Correo Electrónico',
-                                    prefixIcon: Icon(Icons.email_outlined),
-                                  ),
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (value) =>
-                                      (value == null || !value.contains('@'))
-                                          ? 'Correo inválido'
-                                          : null,
-                                  onSaved: (value) => _email = value!,
-                                  enabled: !_isLoading,
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Contraseña',
-                                    prefixIcon: Icon(Icons.lock_outline),
-                                  ),
-                                  obscureText: true,
-                                  validator: (value) =>
-                                      (value == null || value.length < 6)
-                                          ? 'La contraseña es muy corta'
-                                          : null,
-                                  onSaved: (value) => _password = value!,
-                                  enabled: !_isLoading,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          if (_errorMessage != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF1F1),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: const Color(0xFFFFD3D3),
-                                  ),
-                                ),
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                    color: Color(0xFFB42525),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                          _isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : ElevatedButton(
-                                  onPressed: _submit,
-                                  child: const Text('Iniciar Sesión'),
-                                ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              Navigator.pushNamed(context, '/registro');
-                            },
-                      child: const Text(
-                        '¿No tienes cuenta de empresa? Regístrate',
-                        style: TextStyle(
-                          color: kBrandBlue,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: TextButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                                Navigator.pushNamed(context, '/recuperar');
-                              },
-                        child: const Text(
-                          '¿Olvidaste tu contraseña?',
-                          style: TextStyle(color: kInkMuted, fontSize: 13),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                ),
+                Expanded(
+                  flex: 6,
+                  child: ColoredBox(color: c.surface, child: form),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    final c = context.colors;
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            context.t('auth.login.title'),
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            context.t('auth.login.subtitle'),
+            style: TextStyle(color: c.inkMuted, height: 1.4),
+          ),
+          const SizedBox(height: 26),
+          TextFormField(
+            decoration: InputDecoration(
+              labelText: context.t('auth.email'),
+              prefixIcon: Icon(Icons.email_outlined),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.username, AutofillHints.email],
+            autocorrect: false,
+            textInputAction: TextInputAction.next,
+            validator: (value) => (value == null || !value.contains('@'))
+                ? context.tr('auth.email.invalid')
+                : null,
+            onSaved: (value) => _email = value!.trim(),
+            enabled: !_isLoading,
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            decoration: InputDecoration(
+              labelText: context.t('auth.password'),
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                onPressed: () => setState(() => _hidePassword = !_hidePassword),
+                icon: Icon(
+                  _hidePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                 ),
               ),
             ),
+            obscureText: _hidePassword,
+            autofillHints: const [AutofillHints.password],
+            validator: (value) => (value == null || value.length < 6)
+                ? context.tr('auth.password.hint')
+                : null,
+            onSaved: (value) => _password = value!,
+            enabled: !_isLoading,
+            onFieldSubmitted: (_) => _isLoading ? null : _submit(),
           ),
-        ),
+          const SizedBox(height: 20),
+          if (_errorMessage != null) ErrorBanner(message: _errorMessage!),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _submit,
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(context.t('auth.login')),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: _isLoading
+                ? null
+                : () => Navigator.pushNamed(context, '/registro'),
+            child: Text(context.t('auth.register.cta')),
+          ),
+          TextButton(
+            onPressed: _isLoading
+                ? null
+                : () => Navigator.pushNamed(context, '/recuperar'),
+            child: Text(
+              context.t('auth.forgot'),
+              style: TextStyle(color: c.inkMuted, fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }

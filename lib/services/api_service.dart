@@ -17,10 +17,13 @@ class ApiException implements Exception {
 }
 
 class ApiService {
+  /// URL base del backend. Sobreescribible en compilacion con:
+  /// flutter run --dart-define=LOOKUP_API_BASE_URL=https://mi-backend/api/
+  /// (en Android Emulator usa http://10.0.2.2:8000; en dispositivo fisico,
+  /// la IP LAN de la PC que corre el backend).
   static const String _defaultBaseUrl = String.fromEnvironment(
     'LOOKUP_API_BASE_URL',
-    defaultValue:
-        'https://backend-ufl2-git-main-glitter22s-projects.vercel.app/api/',
+    defaultValue: 'http://localhost:8000/api/',
   );
   static final ApiService _instance = ApiService._internal();
 
@@ -74,8 +77,10 @@ class ApiService {
     if (response.statusCode == 307 || response.statusCode == 308) {
       final location = response.headers['location'];
       if (location != null) {
-        debugPrint('Redirect detected to: $location. Retrying POST request.');
-        final redirectUrl = Uri.parse(location);
+        if (kDebugMode) {
+          debugPrint('La API redirigió una solicitud POST; reintentando.');
+        }
+        final redirectUrl = url.resolve(location);
 
         response = await http.post(
           redirectUrl,
@@ -98,7 +103,7 @@ class ApiService {
         final retryLocation = retry.headers['location'];
         if (retryLocation != null) {
           retry = await http.post(
-            Uri.parse(retryLocation),
+            url.resolve(retryLocation),
             headers: await _getHeaders(),
             body: jsonEncode(data),
           );
@@ -190,9 +195,6 @@ class ApiService {
   }
 
   dynamic _processResponse(http.Response response) {
-    debugPrint(
-        'API Response => Status: ${response.statusCode}, URL: ${response.request?.url}');
-
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) {
         return {}; // Successful but no content
@@ -204,7 +206,10 @@ class ApiService {
         return response.body;
       }
     } else {
-      debugPrint('API Error Body: ${response.body}');
+      if (kDebugMode) {
+        // No registra URL ni cuerpo: pueden contener identificadores o PII.
+        debugPrint('La API respondió con estado ${response.statusCode}.');
+      }
       dynamic decoded;
       try {
         decoded = jsonDecode(response.body);
