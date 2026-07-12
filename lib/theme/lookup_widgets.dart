@@ -435,33 +435,46 @@ class InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 11),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: c.border)),
+    final valueText = Text(
+      value.trim(),
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w500,
+        color: c.ink,
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: c.inkFaint, size: 19),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(fontSize: 13.5, color: c.inkMuted),
-          ),
-          const Spacer(),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-                color: c.ink,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: c.border)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: c.inkFaint, size: 19),
+            const SizedBox(width: 12),
+            if (constraints.maxWidth >= 520) ...[
+              SizedBox(
+                width: 240,
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: 13.5, color: c.inkMuted),
+                ),
               ),
-            ),
-          ),
-        ],
+              Expanded(child: valueText),
+            ] else ...[
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: 13.5, color: c.inkMuted),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(child: valueText),
+            ],
+          ],
+        ),
       ),
     );
   }

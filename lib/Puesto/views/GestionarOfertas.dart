@@ -86,21 +86,6 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
     final compact = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(context.t('jobs.title')),
-        actions: compact
-            ? null
-            : [
-                Padding(
-                  padding: const EdgeInsets.only(right: 14),
-                  child: FilledButton.icon(
-                    onPressed: _crearVacante,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(context.t('home.publish')),
-                  ),
-                ),
-              ],
-      ),
       floatingActionButton: compact
           ? FloatingActionButton.extended(
               onPressed: _crearVacante,
@@ -119,6 +104,18 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
               compact ? 104 : 32,
             ),
             children: [
+              if (!compact) ...[
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.icon(
+                    key: const ValueKey('publish-vacancy-button'),
+                    onPressed: _crearVacante,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(context.t('home.publish')),
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth >= 620;
@@ -215,12 +212,6 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                   message: puestoService.puestosEmpresa.isEmpty
                       ? context.t('home.empty.msg')
                       : context.t('jobs.filtered.msg'),
-                  actionLabel: puestoService.puestosEmpresa.isEmpty
-                      ? context.t('home.publish')
-                      : null,
-                  onAction: puestoService.puestosEmpresa.isEmpty
-                      ? _crearVacante
-                      : null,
                 )
               else ...[
                 Text(

@@ -82,13 +82,13 @@ const Map<String, String> stringsEs = {
   'home.total': 'Total publicadas',
   'home.recent': 'Vacantes recientes',
   'home.see_all': 'Ver todas',
+  'home.go_to_vacancies': 'Ir a Vacantes',
   'home.publish': 'Publicar vacante',
   'home.empty.title': 'Aún no has publicado vacantes',
   'home.empty.msg':
       'Crea tu primera vacante para empezar a recibir postulaciones.',
 
   // Vacantes
-  'jobs.title': 'Vacantes',
   'jobs.search': 'Buscar por título o ciudad',
   'jobs.all': 'Todas',
   'jobs.open': 'Abiertas',
@@ -255,11 +255,10 @@ const Map<String, String> stringsEs = {
   'estado.cerrado': 'Cerrada',
 
   // Contratos
-  'contrato.tiempo_completo': 'Tiempo completo',
-  'contrato.medio_tiempo': 'Medio tiempo',
+  'contrato.tiempo_completo': 'Jornada Completa',
+  'contrato.medio_tiempo': 'Jornada Parcial',
   'contrato.temporal': 'Temporal',
-  'contrato.freelance': 'Freelance',
-  'contrato.practicas': 'Prácticas',
+  'contrato.practicas': 'Prácticas Preprofesionales',
   'contrato.na': 'Contrato no especificado',
   'salario.na': 'Salario a convenir',
   // Notificaciones
@@ -346,11 +345,11 @@ const Map<String, String> stringsEn = {
   'home.total': 'Total posted',
   'home.recent': 'Recent vacancies',
   'home.see_all': 'See all',
+  'home.go_to_vacancies': 'Go to vacancies',
   'home.publish': 'Post vacancy',
   'home.empty.title': "You haven't posted any vacancies yet",
   'home.empty.msg':
       'Create your first vacancy to start receiving applications.',
-  'jobs.title': 'Vacancies',
   'jobs.search': 'Search by title or city',
   'jobs.all': 'All',
   'jobs.open': 'Open',
@@ -499,11 +498,10 @@ const Map<String, String> stringsEn = {
   'estado.rechazado': 'Rejected',
   'estado.abierto': 'Open',
   'estado.cerrado': 'Closed',
-  'contrato.tiempo_completo': 'Full time',
-  'contrato.medio_tiempo': 'Part time',
+  'contrato.tiempo_completo': 'Full-time',
+  'contrato.medio_tiempo': 'Part-time',
   'contrato.temporal': 'Temporary',
-  'contrato.freelance': 'Freelance',
-  'contrato.practicas': 'Internship',
+  'contrato.practicas': 'Pre-professional internship',
   'contrato.na': 'Contract not specified',
   'salario.na': 'Salary negotiable',
   'notif.title': 'Notifications',

@@ -4,7 +4,6 @@ import 'package:lookup_flutter/services/auth_service.dart';
 import 'package:lookup_flutter/services/profile_service.dart';
 import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/services/puesto_service.dart';
-import 'package:lookup_flutter/Puesto/views/CrearPuestoPage.dart';
 import 'package:lookup_flutter/Puesto/views/DetallePuestoPage.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 import 'package:lookup_flutter/theme/lookup_widgets.dart';
@@ -12,12 +11,10 @@ import 'package:lookup_flutter/theme/lookup_widgets.dart';
 /// Panel de inicio para cuentas de empresa: resumen operativo de vacantes.
 class HomeEmpresa extends StatefulWidget {
   final VoidCallback onNavigateToOfertas;
-  final VoidCallback onNavigateToProfile;
 
   const HomeEmpresa({
     super.key,
     required this.onNavigateToOfertas,
-    required this.onNavigateToProfile,
   });
 
   @override
@@ -42,16 +39,6 @@ class _HomeEmpresaState extends State<HomeEmpresa> {
       Provider.of<PuestoService>(context, listen: false)
           .fetchPuestosPorEmpresa(empresaId),
     ]);
-  }
-
-  Future<void> _crearVacante() async {
-    final created = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (context) => const CrearPuestoPage()),
-    );
-    if (created == true && mounted) {
-      await _loadInitialData();
-    }
   }
 
   @override
@@ -94,50 +81,21 @@ class _HomeEmpresaState extends State<HomeEmpresa> {
               32,
             ),
             children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 620;
-                  final heading = Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${context.t('home.greeting')} $nombre',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.t('home.subtitle'),
-                        style: TextStyle(color: c.inkMuted, fontSize: 14.5),
-                      ),
-                    ],
-                  );
-                  final action = FilledButton.icon(
-                    onPressed: _crearVacante,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(context.t('home.publish')),
-                  );
-
-                  if (compact) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        heading,
-                        const SizedBox(height: 16),
-                        action,
-                      ],
-                    );
-                  }
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: heading),
-                      const SizedBox(width: 20),
-                      action,
-                    ],
-                  );
-                },
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${context.t('home.greeting')} $nombre',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    context.t('home.subtitle'),
+                    style: TextStyle(color: c.inkMuted, fontSize: 14.5),
+                  ),
+                ],
               ),
               const SizedBox(height: 22),
               _StatStrip(
@@ -191,8 +149,8 @@ class _HomeEmpresaState extends State<HomeEmpresa> {
                   icon: Icons.work_off_outlined,
                   title: context.t('home.empty.title'),
                   message: context.t('home.empty.msg'),
-                  actionLabel: context.t('home.publish'),
-                  onAction: _crearVacante,
+                  actionLabel: context.t('home.go_to_vacancies'),
+                  onAction: widget.onNavigateToOfertas,
                 )
               else
                 ...recientes.map(
