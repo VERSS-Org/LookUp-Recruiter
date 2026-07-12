@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/api_service.dart';
+import 'package:lookup_flutter/config/portal_links.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
 import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
@@ -168,6 +169,17 @@ class LoginState extends State<Login> {
             onPressed: _isLoading
                 ? null
                 : () => Navigator.pushNamed(context, '/registro'),
+          ),
+          const SizedBox(height: 2),
+          InlinePromptLink(
+            prompt: context.t('auth.applicant.prompt'),
+            label: context.t('auth.applicant.link'),
+            onPressed: _isLoading
+                ? null
+                : () => openApplicantPortal(
+                      context,
+                      errorMessage: context.tr('auth.applicant.open.error'),
+                    ),
           ),
           const SizedBox(height: 4),
           TextButton(

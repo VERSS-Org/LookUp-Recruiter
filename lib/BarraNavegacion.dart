@@ -55,11 +55,6 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
       _currentIndex = index;
       _stamp++;
     });
-    if (index == 3) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.read<PostulacionService>().markEventosSeen();
-      });
-    }
   }
 
   Future<void> _refreshBadges() async {
@@ -111,7 +106,6 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
         ),
         const GestionarOfertas(),
         const MensajesEmpresa(),
-        const NovedadesEmpresa(),
         const PerfilPage(),
       ];
       return Scaffold(
@@ -269,21 +263,38 @@ class _DesktopTopBar extends StatelessWidget {
             onPressed: () => onSelect(2),
           ),
           const SizedBox(width: 2),
-          BadgedIconButton(
-            icon:
-                index == 3 ? Icons.notifications : Icons.notifications_outlined,
-            count: eventos,
+          PopupMenuButton<void>(
+            key: const ValueKey('desktop-notifications-button'),
             tooltip: context.t('notif.title'),
-            onPressed: () => onSelect(3),
+            position: PopupMenuPosition.under,
+            offset: const Offset(0, 6),
+            constraints: const BoxConstraints.tightFor(
+              width: 420,
+              height: 480,
+            ),
+            itemBuilder: (context) => const [
+              PopupMenuItem<void>(
+                enabled: false,
+                padding: EdgeInsets.zero,
+                height: 480,
+                child: NovedadesEmpresa(compact: true),
+              ),
+            ],
+            icon: eventos > 0
+                ? Badge.count(
+                    count: eventos,
+                    child: const Icon(Icons.notifications_outlined),
+                  )
+                : const Icon(Icons.notifications_outlined),
           ),
           const SizedBox(width: 8),
           Material(
-            color: index == 4
+            color: index == 3
                 ? c.brand.withValues(alpha: c.chipAlpha)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
-              onTap: () => onSelect(4),
+              onTap: () => onSelect(3),
               borderRadius: BorderRadius.circular(10),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -305,7 +316,7 @@ class _DesktopTopBar extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
-                          color: index == 4 ? c.brand : c.ink,
+                          color: index == 3 ? c.brand : c.ink,
                         ),
                       ),
                     ),
