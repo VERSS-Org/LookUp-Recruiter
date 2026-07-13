@@ -95,6 +95,7 @@ const Map<String, String> stringsEs = {
   // Vacantes
   'jobs.search': 'Buscar por título o ciudad',
   'jobs.all': 'Todas',
+  'jobs.filter': 'Filtrar vacantes',
   'jobs.open': 'Abiertas',
   'jobs.closed': 'Cerradas',
   'jobs.filtered.title': 'Sin resultados con estos filtros',
@@ -359,6 +360,7 @@ const Map<String, String> stringsEn = {
       'Create your first vacancy to start receiving applications.',
   'jobs.search': 'Search by title or city',
   'jobs.all': 'All',
+  'jobs.filter': 'Filter vacancies',
   'jobs.open': 'Open',
   'jobs.closed': 'Closed',
   'jobs.filtered.title': 'No results with these filters',

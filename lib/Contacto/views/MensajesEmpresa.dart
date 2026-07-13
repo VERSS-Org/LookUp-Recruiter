@@ -40,16 +40,9 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
     super.dispose();
   }
 
-  void _open(Map<String, dynamic> hilo, bool isWide) {
-    if (isWide) {
-      setState(() => _selected = hilo);
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ChatEmpresaScreen(hilo: hilo)),
-      );
-    }
-  }
+  void _open(Map<String, dynamic> hilo) => setState(() => _selected = hilo);
+
+  void _closeMobileThread() => setState(() => _selected = null);
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +70,8 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
     }).toList();
     // Se mide el ancho real del panel para que los dos paneles aparezcan tanto
     // dentro del shell como en una ruta independiente.
-    final isWide = availableWidth >= 860;
+    final isWide = availableWidth >= 960;
+    final isCompact = availableWidth < 480;
 
     final lista = contactoService.isBandejaLoading && bandeja.isEmpty
         ? ListView(
@@ -127,17 +121,24 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
                           conversaciones[index] as Map);
                       return _ThreadTile(
                         hilo: hilo,
+                        compact: isCompact,
                         selected: isWide &&
                             _selected?['postulacion_id'] ==
                                 hilo['postulacion_id'],
-                        onTap: () => _open(hilo, isWide),
+                        onTap: () => _open(hilo),
                       );
                     },
                   );
 
     final search = Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      padding: EdgeInsets.fromLTRB(
+        isCompact ? 12 : 14,
+        isCompact ? 10 : 12,
+        isCompact ? 12 : 14,
+        10,
+      ),
       child: TextField(
+        key: const ValueKey('message-search-field'),
         controller: _searchController,
         onChanged: (value) => setState(() => _query = value),
         textInputAction: TextInputAction.search,
@@ -161,6 +162,9 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
     );
 
     final listPanel = Column(
+      key: ValueKey(
+        isWide ? 'desktop-message-list-content' : 'mobile-message-list-content',
+      ),
       children: [
         search,
         Divider(color: c.border, height: 1),
@@ -183,7 +187,7 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: Text(context.t('chat.title')),
+                title: const BrandMark(size: 32),
               )
             : null,
         body: Row(
@@ -200,23 +204,9 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
             Expanded(
               child: _selected == null
                   ? Container(
+                      key: const ValueKey('messages-empty-selection'),
                       color: c.background,
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const BrandMark(size: 46),
-                            const SizedBox(height: 14),
-                            Text(
-                              context.t('chat.empty.title'),
-                              style: TextStyle(
-                                color: c.inkMuted,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      child: const Center(child: BrandMark(size: 46)),
                     )
                   : ChatEmpresaView(
                       key: ValueKey(_selected!['postulacion_id']),
@@ -228,8 +218,30 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
       );
     }
 
+    if (_selected != null) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) _closeMobileThread();
+        },
+        child: Scaffold(
+          key: const ValueKey('mobile-company-chat-screen'),
+          body: SafeArea(
+            child: ChatEmpresaView(
+              key: ValueKey(_selected!['postulacion_id']),
+              hilo: _selected!,
+              showBack: true,
+              onBack: _closeMobileThread,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
+      key: const ValueKey('mobile-company-messages-list'),
       appBar: AppBar(
+        toolbarHeight: 54,
         centerTitle: true,
         automaticallyImplyLeading: widget.showBack,
         leading: widget.showBack
@@ -239,9 +251,9 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
                 onPressed: () => Navigator.pop(context),
               )
             : null,
-        title: Text(context.t('chat.title')),
+        title: const BrandMark(size: 32),
       ),
-      body: listPanel,
+      body: SafeArea(top: false, child: listPanel),
     );
   }
 }
@@ -251,11 +263,13 @@ class _ThreadTile extends StatelessWidget {
     required this.hilo,
     required this.onTap,
     this.selected = false,
+    this.compact = false,
   });
 
   final Map<String, dynamic> hilo;
   final VoidCallback onTap;
   final bool selected;
+  final bool compact;
 
   String _hora(String? raw) {
     if (raw == null) return '';
@@ -288,15 +302,18 @@ class _ThreadTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 14 : 18,
+            vertical: compact ? 10 : 12,
+          ),
           child: Row(
             children: [
               InitialsAvatar(
                 name: contraparte['nombre']?.toString() ?? '?',
-                size: 48,
+                size: compact ? 44 : 48,
                 imageUrl: contraparte['foto_url']?.toString(),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: compact ? 10 : 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,10 +419,16 @@ class ChatEmpresaScreen extends StatelessWidget {
 /// Conversación de la empresa con un postulante, con acciones de proceso
 /// (marcar aceptado / rechazar) en el menú de la cabecera.
 class ChatEmpresaView extends StatefulWidget {
-  const ChatEmpresaView({super.key, required this.hilo, this.showBack = false});
+  const ChatEmpresaView({
+    super.key,
+    required this.hilo,
+    this.showBack = false,
+    this.onBack,
+  });
 
   final Map<String, dynamic> hilo;
   final bool showBack;
+  final VoidCallback? onBack;
 
   @override
   State<ChatEmpresaView> createState() => _ChatEmpresaViewState();
@@ -616,7 +639,7 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
                   IconButton(
                     tooltip: context.t('common.back'),
                     icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: widget.onBack ?? () => Navigator.pop(context),
                   ),
                 InitialsAvatar(
                   name: contraparte['nombre']?.toString() ?? '?',

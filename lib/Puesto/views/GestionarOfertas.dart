@@ -84,6 +84,11 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
     final isLoading =
         puestoService.isLoading && puestoService.puestosEmpresa.isEmpty;
     final compact = MediaQuery.sizeOf(context).width < 600;
+    final filtroLabels = <String, String>{
+      'todas': context.t('jobs.all'),
+      'abierto': context.t('jobs.open'),
+      'cerrado': context.t('jobs.closed'),
+    };
 
     return Scaffold(
       floatingActionButton: compact
@@ -137,24 +142,49 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                             ),
                     ),
                   );
-                  final filtro = SegmentedButton<String>(
-                    segments: [
-                      ButtonSegment(
-                        value: 'todas',
-                        label: Text(context.t('jobs.all')),
-                      ),
-                      ButtonSegment(
-                        value: 'abierto',
-                        label: Text(context.t('jobs.open')),
-                      ),
-                      ButtonSegment(
-                        value: 'cerrado',
-                        label: Text(context.t('jobs.closed')),
-                      ),
+                  final filtro = PopupMenuButton<String>(
+                    key: const ValueKey('vacancy-filter-menu'),
+                    initialValue: _estadoFiltro,
+                    position: PopupMenuPosition.under,
+                    constraints:
+                        const BoxConstraints(minWidth: 170, maxWidth: 220),
+                    tooltip: context.t('jobs.filter'),
+                    onSelected: (value) =>
+                        setState(() => _estadoFiltro = value),
+                    itemBuilder: (context) => [
+                      for (final value in const [
+                        'todas',
+                        'abierto',
+                        'cerrado',
+                      ])
+                        PopupMenuItem<String>(
+                          value: value,
+                          height: 44,
+                          child: Row(
+                            children: [
+                              Icon(
+                                value == _estadoFiltro
+                                    ? Icons.check
+                                    : Icons.circle_outlined,
+                                size: 18,
+                                color: value == _estadoFiltro
+                                    ? c.brand
+                                    : c.inkFaint,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(filtroLabels[value]!),
+                            ],
+                          ),
+                        ),
                     ],
-                    selected: {_estadoFiltro},
-                    onSelectionChanged: (selection) =>
-                        setState(() => _estadoFiltro = selection.first),
+                    child: IgnorePointer(
+                      child: OutlinedButton.icon(
+                        key: const ValueKey('vacancy-filter-trigger'),
+                        onPressed: () {},
+                        icon: const Icon(Icons.filter_list, size: 18),
+                        label: Text(filtroLabels[_estadoFiltro]!),
+                      ),
+                    ),
                   );
 
                   if (isWide) {
@@ -171,10 +201,7 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                     children: [
                       search,
                       const SizedBox(height: 10),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: filtro,
-                      ),
+                      Align(alignment: Alignment.centerLeft, child: filtro),
                     ],
                   );
                 },

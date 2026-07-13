@@ -98,7 +98,7 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
   @override
   Widget build(BuildContext context) {
     final unread = context.watch<ContactoService>().unreadMessages;
-    final isWide = MediaQuery.sizeOf(context).width >= 920;
+    final isWide = MediaQuery.sizeOf(context).width >= 960;
     final c = context.colors;
 
     final unseenEventos = context.watch<PostulacionService>().unseenEventos;
@@ -243,47 +243,46 @@ class _DesktopTopBar extends StatelessWidget {
     final profile = context.watch<ProfileService>().profileData ??
         const <String, dynamic>{};
     final nombre = profile['nombre_completo']?.toString() ?? 'Empresa';
+    final compactNav = MediaQuery.sizeOf(context).width < 1240;
 
     return Container(
       key: const ValueKey('desktop-company-navbar'),
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: EdgeInsets.symmetric(horizontal: compactNav ? 14 : 18),
       decoration: BoxDecoration(
         color: c.surface,
         border: Border(bottom: BorderSide(color: c.border)),
       ),
       child: Row(
         children: [
-          const SizedBox(
-            width: 112,
-            child: Align(
-              alignment: Alignment.centerLeft,
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => onSelect(0),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: BrandMark(size: 38),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: compactNav ? 8 : 16),
           _DesktopNavItem(
-            icon: Icons.home_outlined,
-            selectedIcon: Icons.home,
             label: context.t('nav.home'),
             selected: index == 0,
+            compact: compactNav,
             onTap: () => onSelect(0),
           ),
           _DesktopNavItem(
-            icon: Icons.work_outline,
-            selectedIcon: Icons.work,
             label: context.t('nav.vacancies'),
             selected: index == 1,
+            compact: compactNav,
             onTap: () => onSelect(1),
           ),
           const Spacer(),
           BadgedIconButton(
-            icon: index == 2 ? Icons.chat : Icons.chat_outlined,
+            icon: Icons.chat_outlined,
             count: unread,
             tooltip: context.t('nav.messages'),
             onPressed: () => onSelect(2),
           ),
-          const SizedBox(width: 2),
           PopupMenuButton<void>(
             key: const ValueKey('desktop-notifications-button'),
             tooltip: context.t('notif.title'),
@@ -309,41 +308,50 @@ class _DesktopTopBar extends StatelessWidget {
                 : const Icon(Icons.notifications_outlined),
           ),
           const SizedBox(width: 8),
-          Material(
-            color: index == 3
-                ? c.brand.withValues(alpha: c.chipAlpha)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            child: InkWell(
-              onTap: () => onSelect(3),
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          PopupMenuButton<String>(
+            key: const ValueKey('desktop-company-profile-menu'),
+            tooltip: nombre,
+            offset: const Offset(0, 46),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'perfil',
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    InitialsAvatar(
-                      name: nombre,
-                      size: 34,
-                      imageUrl: profile['foto_url']?.toString(),
-                    ),
-                    const SizedBox(width: 9),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 150),
-                      child: Text(
-                        nombre,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          color: index == 3 ? c.brand : c.ink,
-                        ),
-                      ),
+                    const Icon(Icons.business_outlined, size: 19),
+                    const SizedBox(width: 10),
+                    Text(context.tr('nav.my_profile')),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 19, color: c.danger),
+                    const SizedBox(width: 10),
+                    Text(
+                      context.tr('nav.logout'),
+                      style: TextStyle(color: c.danger),
                     ),
                   ],
                 ),
               ),
+            ],
+            onSelected: (value) async {
+              if (value == 'perfil') {
+                onSelect(3);
+                return;
+              }
+              await context.read<AuthService>().logout();
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true)
+                    .pushNamedAndRemoveUntil('/login', (route) => false);
+              }
+            },
+            child: InitialsAvatar(
+              name: nombre,
+              size: 34,
+              imageUrl: profile['foto_url']?.toString(),
             ),
           ),
         ],
@@ -354,56 +362,48 @@ class _DesktopTopBar extends StatelessWidget {
 
 class _DesktopNavItem extends StatelessWidget {
   const _DesktopNavItem({
-    required this.icon,
-    required this.selectedIcon,
     required this.label,
     required this.selected,
     required this.onTap,
+    this.compact = false,
   });
 
-  final IconData icon;
-  final IconData selectedIcon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          height: 64,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: selected ? c.brand : Colors.transparent,
-                width: 2,
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected ? selectedIcon : icon,
-                size: 19,
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Container(
+        height: 60,
+        padding: EdgeInsets.symmetric(horizontal: compact ? 7 : 14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: compact ? 13.5 : 14,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 color: selected ? c.brand : c.inkMuted,
               ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? c.brand : c.inkMuted,
-                ),
+            ),
+            const SizedBox(height: 3),
+            Container(
+              height: 2.5,
+              width: 26,
+              decoration: BoxDecoration(
+                color: selected ? c.brand : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -75,6 +75,9 @@ class _CandidatoPerfilPageState extends State<CandidatoPerfilPage> {
               : const <String, dynamic>{};
           final descripcion = perfil['descripcion']?.toString() ?? '';
           final habilidades = (perfil['habilidades'] as List?) ?? const [];
+          final email = perfil['mostrar_email'] == false
+              ? ''
+              : (cuenta['email']?.toString().trim() ?? '');
 
           return ListView(
             key: const ValueKey('candidate-profile-page-scroll'),
@@ -105,7 +108,7 @@ class _CandidatoPerfilPageState extends State<CandidatoPerfilPage> {
                           if ((cuenta['ciudad']?.toString() ?? '').isNotEmpty)
                             cuenta['ciudad'].toString(),
                         ].join(' · '),
-                        caption: cuenta['email']?.toString() ?? '',
+                        caption: email,
                       ),
                       if (descripcion.isNotEmpty) ...[
                         const SizedBox(height: 22),
