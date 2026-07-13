@@ -50,28 +50,24 @@ class _PerfilPageState extends State<PerfilPage> {
     final c = context.colors;
     final profile = profileService.profileData ?? const <String, dynamic>{};
     final perfil = _perfilDe(profile);
-    final nombre = profile['nombre_completo']?.toString() ?? 'Empresa';
-    final descripcion = perfil['descripcion']?.toString() ?? '';
+    final rawNombre = profile['nombre_completo']?.toString().trim() ?? '';
+    final nombre = rawNombre.isEmpty ? 'Empresa' : rawNombre;
+    final ciudad = profile['ciudad']?.toString().trim() ?? '';
+    final descripcion = perfil['descripcion']?.toString().trim() ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: widget.showBack,
-        leading: widget.showBack
-            ? IconButton(
+      // Dentro del shell web la pestaña de perfil ya aporta el contexto. El
+      // AppBar se conserva solo en la ruta móvil, donde también permite volver.
+      appBar: widget.showBack
+          ? AppBar(
+              leading: IconButton(
                 tooltip: context.t('common.back'),
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.pop(context),
-              )
-            : null,
-        title: Text(context.t('profile.title')),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => _showEditDialog(context, authService, profile),
-            tooltip: context.t('profile.edit'),
-          ),
-        ],
-      ),
+              ),
+              title: Text(context.t('profile.title')),
+            )
+          : null,
       body: profileService.isLoading && profile.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : profileService.errorMessage != null && profile.isEmpty
@@ -119,28 +115,60 @@ class _PerfilPageState extends State<PerfilPage> {
                             fallbackIcon: Icons.business_outlined,
                           ),
                           title: nombre,
-                          subtitle: [
-                            if ((profile['ciudad']?.toString() ?? '')
-                                .isNotEmpty)
-                              profile['ciudad'].toString(),
-                          ].join(' · '),
+                          subtitle: ciudad,
                           caption: profile['email']?.toString().trim() ?? '',
-                          action: OutlinedButton.icon(
-                            icon: const Icon(Icons.photo_camera_outlined,
-                                size: 17),
-                            label: Text(context.t('profile.change_logo')),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 36),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                            ),
-                            onPressed: () => _showPhotoDialog(context),
+                          action: Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Tooltip(
+                                message: context.t('profile.change_logo'),
+                                child: OutlinedButton.icon(
+                                  key: const ValueKey(
+                                    'company-change-logo-action',
+                                  ),
+                                  icon: const Icon(
+                                    Icons.photo_camera_outlined,
+                                    size: 17,
+                                  ),
+                                  label: Text(
+                                    context.t('profile.change_logo'),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(0, 36),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                  ),
+                                  onPressed: () => _showPhotoDialog(context),
+                                ),
+                              ),
+                              IconButton.outlined(
+                                key: const ValueKey(
+                                  'company-edit-profile-action',
+                                ),
+                                tooltip: context.t('profile.edit'),
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(36, 36),
+                                  fixedSize: const Size(36, 36),
+                                  padding: const EdgeInsets.all(8),
+                                  side: BorderSide(color: c.border),
+                                ),
+                                icon: const Icon(Icons.edit_outlined, size: 18),
+                                onPressed: () => _showEditDialog(
+                                  context,
+                                  authService,
+                                  profile,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 24),
                         SectionLabel(
                           title: context.t('profile.about'),
-                          actionLabel: context.t('profile.edit'),
+                          actionLabel: context.t('common.edit'),
                           onAction: () =>
                               _editarDescripcion(context, perfil, descripcion),
                         ),

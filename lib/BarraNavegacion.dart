@@ -29,7 +29,7 @@ class BarraNavegacion extends StatefulWidget {
 
 class _BarraNavegacionState extends State<BarraNavegacion> {
   int _currentIndex = 0;
-  int _stamp = 0; // fuerza un Navigator interno nuevo al cambiar de sección
+  GlobalKey<NavigatorState> _contentNavigatorKey = GlobalKey<NavigatorState>();
   Timer? _inboxTimer;
   bool _isRefreshingBadges = false;
 
@@ -51,9 +51,13 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
   }
 
   void _navigateTo(int index) {
+    if (index == _currentIndex) {
+      _contentNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+      return;
+    }
     setState(() {
       _currentIndex = index;
-      _stamp++;
+      _contentNavigatorKey = GlobalKey<NavigatorState>();
     });
   }
 
@@ -118,11 +122,27 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
               onSelect: _navigateTo,
             ),
             Expanded(
-              child: Navigator(
-                key: ValueKey('content-$_currentIndex-$_stamp'),
-                onGenerateRoute: (settings) => MaterialPageRoute(
-                  settings: settings,
-                  builder: (_) => pages[_currentIndex],
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                reverseDuration: const Duration(milliseconds: 140),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  final position = Tween<Offset>(
+                    begin: const Offset(0.008, 0),
+                    end: Offset.zero,
+                  ).animate(animation);
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(position: position, child: child),
+                  );
+                },
+                child: Navigator(
+                  key: _contentNavigatorKey,
+                  onGenerateRoute: (settings) => MaterialPageRoute(
+                    settings: settings,
+                    builder: (_) => pages[_currentIndex],
+                  ),
                 ),
               ),
             ),
@@ -225,8 +245,9 @@ class _DesktopTopBar extends StatelessWidget {
     final nombre = profile['nombre_completo']?.toString() ?? 'Empresa';
 
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      key: const ValueKey('desktop-company-navbar'),
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
         color: c.surface,
         border: Border(bottom: BorderSide(color: c.border)),
@@ -234,13 +255,13 @@ class _DesktopTopBar extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(
-            width: 128,
+            width: 112,
             child: Align(
               alignment: Alignment.centerLeft,
-              child: BrandMark(size: 39),
+              child: BrandMark(size: 38),
             ),
           ),
-          const SizedBox(width: 18),
+          const SizedBox(width: 16),
           _DesktopNavItem(
             icon: Icons.home_outlined,
             selectedIcon: Icons.home,
@@ -355,8 +376,8 @@ class _DesktopNavItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -369,14 +390,14 @@ class _DesktopNavItem extends StatelessWidget {
             children: [
               Icon(
                 selected ? selectedIcon : icon,
-                size: 20,
+                size: 19,
                 color: selected ? c.brand : c.inkMuted,
               ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 13,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   color: selected ? c.brand : c.inkMuted,
                 ),
