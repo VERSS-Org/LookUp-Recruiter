@@ -239,7 +239,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('message route keeps back navigation from 860 to 919px', (
+  testWidgets('message route uses compact branded navigation below 960px', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -251,10 +251,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.byKey(const ValueKey('desktop-message-list-panel')),
+      find.byKey(const ValueKey('mobile-company-messages-list')),
       findsOneWidget,
     );
-    expect(find.text('Mensajes'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('desktop-message-list-panel')),
+      findsNothing,
+    );
+    expect(find.text('Mensajes'), findsNothing);
+    expect(find.byType(BrandMark), findsOneWidget);
     expect(find.byTooltip('Volver'), findsOneWidget);
     expect(tester.takeException(), isNull);
 

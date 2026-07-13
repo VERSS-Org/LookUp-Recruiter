@@ -77,6 +77,14 @@ class _CandidatosViewState extends State<CandidatosView>
 
     final todas = postulacionService.postulacionesPuesto;
     final postulaciones = _filtrar(todas);
+    final filtroLabels = <String, String>{
+      'todos': context.t('cand.all'),
+      'pendiente': context.t('estado.pendiente'),
+      'en_revision': context.t('estado.en_revision'),
+      'entrevista': context.t('estado.entrevista'),
+      'aceptado': context.t('estado.aceptado'),
+      'rechazado': context.t('estado.rechazado'),
+    };
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -107,38 +115,53 @@ class _CandidatosViewState extends State<CandidatosView>
                 message: context.t('cand.empty.msg'),
               )
             else ...[
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(
-                      value: 'todos',
-                      label: Text(context.t('cand.all')),
-                    ),
-                    ButtonSegment(
-                      value: 'pendiente',
-                      label: Text(context.t('estado.pendiente')),
-                    ),
-                    ButtonSegment(
-                      value: 'en_revision',
-                      label: Text(context.t('estado.en_revision')),
-                    ),
-                    ButtonSegment(
-                      value: 'entrevista',
-                      label: Text(context.t('estado.entrevista')),
-                    ),
-                    ButtonSegment(
-                      value: 'aceptado',
-                      label: Text(context.t('estado.aceptado')),
-                    ),
-                    ButtonSegment(
-                      value: 'rechazado',
-                      label: Text(context.t('estado.rechazado')),
-                    ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: PopupMenuButton<String>(
+                  key: const ValueKey('candidate-filter-menu'),
+                  initialValue: _estadoFiltro,
+                  position: PopupMenuPosition.under,
+                  constraints:
+                      const BoxConstraints(minWidth: 190, maxWidth: 240),
+                  tooltip: context.t('cand.status'),
+                  onSelected: (value) => setState(() => _estadoFiltro = value),
+                  itemBuilder: (context) => [
+                    for (final value in const [
+                      'todos',
+                      'pendiente',
+                      'en_revision',
+                      'entrevista',
+                      'aceptado',
+                      'rechazado',
+                    ])
+                      PopupMenuItem<String>(
+                        value: value,
+                        height: 44,
+                        child: Row(
+                          children: [
+                            Icon(
+                              value == _estadoFiltro
+                                  ? Icons.check
+                                  : Icons.circle_outlined,
+                              size: 18,
+                              color:
+                                  value == _estadoFiltro ? c.brand : c.inkFaint,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(filtroLabels[value]!),
+                          ],
+                        ),
+                      ),
                   ],
-                  selected: {_estadoFiltro},
-                  onSelectionChanged: (selection) =>
-                      setState(() => _estadoFiltro = selection.first),
+                  child: IgnorePointer(
+                    child: OutlinedButton.icon(
+                      key: const ValueKey('candidate-filter-trigger'),
+                      onPressed: () {},
+                      icon: const Icon(Icons.filter_list, size: 18),
+                      label: Text(filtroLabels[_estadoFiltro]!),
+                      iconAlignment: IconAlignment.start,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

@@ -124,16 +124,21 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            widget.puesto['titulo']?.toString() ?? context.t('jobs.detail'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: context.t('jobs.detail')),
-              Tab(text: context.t('jobs.candidates')),
-            ],
+          key: const ValueKey('vacancy-detail-appbar'),
+          toolbarHeight: 52,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 980),
+                child: TabBar(
+                  tabs: [
+                    Tab(text: context.t('jobs.detail')),
+                    Tab(text: context.t('jobs.candidates')),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
         body: TabBarView(
@@ -218,7 +223,7 @@ class _DetalleTab extends StatelessWidget {
     final titulo = puesto['titulo']?.toString() ?? '—';
 
     return PageContainer(
-      maxWidth: 860,
+      maxWidth: 980,
       child: ListView(
         padding: EdgeInsets.fromLTRB(
           MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
@@ -387,10 +392,11 @@ class _DetalleTab extends StatelessWidget {
                 );
               }
               return Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Expanded(child: editar),
+                  editar,
                   const SizedBox(width: 12),
-                  Expanded(child: estado),
+                  estado,
                 ],
               );
             },
