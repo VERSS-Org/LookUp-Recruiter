@@ -36,10 +36,10 @@ class _FakeProfileService extends ProfileService {
   _FakeProfileService()
       : _profile = {
           'cuenta_id': 'empresa-test',
-          'nombre_completo': 'Empresa Prueba',
+          'nombre_completo': ' Empresa Prueba ',
           'email': ' empresa@lookup.test ',
           'telefono': '+51 999 888 777',
-          'ciudad': 'Lima',
+          'ciudad': ' Lima ',
           'perfil': <String, dynamic>{},
         };
 
@@ -116,7 +116,10 @@ Widget _vacancyFormShell() {
   );
 }
 
-Widget _profileShell(_FakeProfileService profileService) {
+Widget _profileShell(
+  _FakeProfileService profileService, {
+  bool showBack = false,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<AuthService>(create: (_) => _FakeAuthService()),
@@ -126,12 +129,27 @@ Widget _profileShell(_FakeProfileService profileService) {
     ],
     child: MaterialApp(
       theme: buildLookUpTheme(Brightness.light),
-      home: const PerfilPage(),
+      home: PerfilPage(showBack: showBack),
     ),
   );
 }
 
 void main() {
+  test('theme uses Helvetica and one transition language on every platform',
+      () {
+    final theme = buildLookUpTheme(Brightness.light);
+
+    expect(theme.textTheme.bodyMedium?.fontFamily, 'Helvetica');
+    expect(
+      theme.textTheme.bodyMedium?.fontFamilyFallback,
+      containsAll(<String>['Arial', 'sans-serif']),
+    );
+    expect(
+      theme.pageTransitionsTheme.builders.keys,
+      containsAll(TargetPlatform.values),
+    );
+  });
+
   testWidgets('desktop login uses one centered form without a side panel', (
     WidgetTester tester,
   ) async {
@@ -200,6 +218,53 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('desktop messages use one compact panel without a second title', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    _setViewport(tester, const Size(1440, 900));
+
+    await tester.pumpWidget(_testShell());
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.byTooltip('Mensajes'));
+    await tester.pumpAndSettle();
+
+    final panel = find.byKey(const ValueKey('desktop-message-list-panel'));
+    expect(panel, findsOneWidget);
+    expect(tester.getSize(panel).width, 360);
+    expect(find.text('Mensajes'), findsNothing);
+    expect(find.text('Buscar conversaciones'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('message route keeps back navigation from 860 to 919px', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    _setViewport(tester, const Size(880, 800));
+
+    await tester.pumpWidget(_testShell());
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.byTooltip('Mensajes'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('desktop-message-list-panel')),
+      findsOneWidget,
+    );
+    expect(find.text('Mensajes'), findsOneWidget);
+    expect(find.byTooltip('Volver'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byTooltip('Volver'));
+    await tester.pumpAndSettle();
+    expect(find.text('Inicio'), findsWidgets);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('desktop shell orders messages, alerts and profile at 1440px', (
     tester,
   ) async {
@@ -208,6 +273,15 @@ void main() {
 
     await tester.pumpWidget(_testShell());
     await tester.pump(const Duration(milliseconds: 100));
+
+    expect(
+      tester.getSize(find.byKey(const ValueKey('desktop-company-navbar'))),
+      const Size(1440, 64),
+    );
+    final sectionSwitcher = tester.widget<AnimatedSwitcher>(
+      find.byType(AnimatedSwitcher),
+    );
+    expect(sectionSwitcher.duration, const Duration(milliseconds: 180));
 
     final messageX = tester.getCenter(find.byTooltip('Mensajes')).dx;
     final notificationX = tester.getCenter(find.byTooltip('Notificaciones')).dx;
@@ -227,6 +301,25 @@ void main() {
         find.byKey(const ValueKey('publish-vacancy-button')), findsOneWidget);
     expect(find.text('Publicar vacante'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    final nestedNavigator = tester.state<NavigatorState>(
+      find.byType(Navigator).last,
+    );
+    nestedNavigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(body: Text('Detalle temporal')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Detalle temporal'), findsOneWidget);
+
+    await tester.tap(find.text('Vacantes').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Detalle temporal'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('publish-vacancy-button')),
+      findsOneWidget,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -268,7 +361,22 @@ void main() {
     await tester.pumpWidget(_profileShell(profileService));
     await tester.pumpAndSettle();
 
+    expect(find.byType(AppBar), findsNothing);
+    expect(
+      find.byKey(const ValueKey('company-change-logo-action')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('company-edit-profile-action')),
+      findsOneWidget,
+    );
+    expect(find.text('Editar perfil'), findsNothing);
+    expect(find.byTooltip('Editar perfil'), findsOneWidget);
+    expect(find.text('Editar'), findsOneWidget);
     expect(find.byType(Scrollbar), findsNothing);
+    expect(find.text('Empresa Prueba'), findsOneWidget);
+    expect(find.text(' Empresa Prueba '), findsNothing);
+    expect(find.text(' Lima '), findsNothing);
     expect(find.text('empresa@lookup.test'), findsNWidgets(2));
     expect(find.text(' empresa@lookup.test '), findsNothing);
     final emailX = tester
@@ -295,8 +403,17 @@ void main() {
           ),
         )
         .dx;
+    final emailLabelRight = tester
+        .getTopRight(
+          find.descendant(
+            of: find.byKey(const ValueKey('company-email-row')),
+            matching: find.text('Correo electrónico'),
+          ),
+        )
+        .dx;
     expect(phoneX, closeTo(emailX, 1));
     expect(cityX, closeTo(emailX, 1));
+    expect(emailX - emailLabelRight, lessThan(100));
 
     await tester.tap(find.byTooltip('Editar perfil'));
     await tester.pumpAndSettle();
@@ -315,6 +432,30 @@ void main() {
     expect(profileService.lastUpdates?['ciudad'], 'Arequipa');
     expect(find.text('+51 987 654 321'), findsOneWidget);
     expect(find.text('Arequipa'), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mobile profile keeps route context and grouped edit actions', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    _setViewport(tester, const Size(360, 800));
+
+    await tester.pumpWidget(
+      _profileShell(_FakeProfileService(), showBack: true),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.text('Perfil de empresa'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('company-change-logo-action')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('company-edit-profile-action')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }

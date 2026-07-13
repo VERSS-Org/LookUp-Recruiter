@@ -77,7 +77,7 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
     }).toList();
     // Se mide el ancho real del panel para que los dos paneles aparezcan tanto
     // dentro del shell como en una ruta independiente.
-    final isWide = availableWidth >= 820;
+    final isWide = availableWidth >= 860;
 
     final lista = contactoService.isBandejaLoading && bandeja.isEmpty
         ? ListView(
@@ -175,31 +175,25 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
 
     if (isWide) {
       return Scaffold(
+        appBar: widget.showBack
+            ? AppBar(
+                centerTitle: true,
+                leading: IconButton(
+                  tooltip: context.t('common.back'),
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                title: Text(context.t('chat.title')),
+              )
+            : null,
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              width: availableWidth >= 1100 ? 380 : 340,
-              child: Column(
-                children: [
-                  Container(
-                    height: 52,
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    alignment: Alignment.centerLeft,
-                    decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(color: c.border)),
-                    ),
-                    child: Text(
-                      context.t('chat.title'),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: c.ink,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: listPanel),
-                ],
+              width: 360,
+              child: KeyedSubtree(
+                key: const ValueKey('desktop-message-list-panel'),
+                child: listPanel,
               ),
             ),
             VerticalDivider(width: 1, color: c.border),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:lookup_flutter/services/locale_controller.dart';
@@ -8,6 +7,26 @@ import 'package:lookup_flutter/services/locale_controller.dart';
 const Color kBrandBlue = Color(0xFF28348A);
 const Color kBrandBlueBright = Color(0xFF4053C8);
 const Color kSkyBlue = Color(0xFF22A9E8);
+const String kLookUpFontFamily = 'Helvetica';
+const List<String> kLookUpFontFallback = ['Arial', 'sans-serif'];
+
+TextStyle _helvetica({
+  Color? color,
+  double? fontSize,
+  FontWeight? fontWeight,
+  double? letterSpacing,
+  double? height,
+}) {
+  return TextStyle(
+    fontFamily: kLookUpFontFamily,
+    fontFamilyFallback: kLookUpFontFallback,
+    color: color,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
 
 /// Tokens de color dependientes del modo (claro/oscuro).
 ///
@@ -213,6 +232,8 @@ ThemeData buildLookUpTheme(Brightness brightness) {
   final base = ThemeData(
     useMaterial3: true,
     brightness: brightness,
+    fontFamily: kLookUpFontFamily,
+    fontFamilyFallback: kLookUpFontFallback,
     visualDensity: VisualDensity.standard,
     colorScheme: ColorScheme.fromSeed(
       seedColor: kBrandBlue,
@@ -228,27 +249,31 @@ ThemeData buildLookUpTheme(Brightness brightness) {
     scaffoldBackgroundColor: palette.background,
   );
 
-  final textTheme = GoogleFonts.poppinsTextTheme(base.textTheme)
+  final textTheme = base.textTheme
+      .apply(
+        fontFamily: kLookUpFontFamily,
+        fontFamilyFallback: kLookUpFontFallback,
+      )
       .apply(bodyColor: palette.ink, displayColor: palette.ink)
       .copyWith(
-        headlineSmall: GoogleFonts.poppins(
+        headlineSmall: _helvetica(
           fontSize: 23,
           fontWeight: FontWeight.w600,
           color: palette.ink,
           height: 1.25,
         ),
-        titleLarge: GoogleFonts.poppins(
+        titleLarge: _helvetica(
           fontWeight: FontWeight.w700,
           letterSpacing: 0,
           color: palette.ink,
         ),
-        titleMedium: GoogleFonts.poppins(
+        titleMedium: _helvetica(
           fontWeight: FontWeight.w600,
           color: palette.ink,
         ),
-        bodyMedium: GoogleFonts.poppins(height: 1.45, color: palette.ink),
-        bodySmall: GoogleFonts.poppins(color: palette.inkMuted),
-        labelLarge: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        bodyMedium: _helvetica(height: 1.45, color: palette.ink),
+        bodySmall: _helvetica(color: palette.inkMuted),
+        labelLarge: _helvetica(fontWeight: FontWeight.w600),
       );
 
   OutlineInputBorder inputBorder(Color color, [double width = 1]) =>
@@ -261,6 +286,16 @@ ThemeData buildLookUpTheme(Brightness brightness) {
     textTheme: textTheme,
     primaryTextTheme: textTheme,
     extensions: [palette],
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: _LookUpPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: _LookUpPageTransitionsBuilder(),
+        TargetPlatform.iOS: _LookUpPageTransitionsBuilder(),
+        TargetPlatform.linux: _LookUpPageTransitionsBuilder(),
+        TargetPlatform.macOS: _LookUpPageTransitionsBuilder(),
+        TargetPlatform.windows: _LookUpPageTransitionsBuilder(),
+      },
+    ),
     appBarTheme: AppBarTheme(
       backgroundColor: palette.surface,
       foregroundColor: palette.ink,
@@ -268,7 +303,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
       centerTitle: false,
       elevation: 0,
       scrolledUnderElevation: 0,
-      titleTextStyle: GoogleFonts.poppins(
+      titleTextStyle: _helvetica(
         color: palette.ink,
         fontSize: 19,
         fontWeight: FontWeight.w700,
@@ -301,7 +336,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
         disabledForegroundColor: palette.inkFaint,
         minimumSize: const Size(64, 48),
         elevation: 0,
-        textStyle: GoogleFonts.poppins(
+        textStyle: _helvetica(
           fontSize: 15,
           fontWeight: FontWeight.w600,
         ),
@@ -313,7 +348,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
         backgroundColor: primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        textStyle: GoogleFonts.poppins(
+        textStyle: _helvetica(
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -325,7 +360,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
         foregroundColor: palette.brand,
         minimumSize: const Size(64, 46),
         side: BorderSide(color: palette.border, width: 1.2),
-        textStyle: GoogleFonts.poppins(
+        textStyle: _helvetica(
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -335,7 +370,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: palette.brand,
-        textStyle: GoogleFonts.poppins(
+        textStyle: _helvetica(
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -345,13 +380,13 @@ ThemeData buildLookUpTheme(Brightness brightness) {
       filled: true,
       fillColor: palette.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      hintStyle: GoogleFonts.poppins(color: palette.inkFaint),
-      labelStyle: GoogleFonts.poppins(color: palette.inkMuted),
-      helperStyle: GoogleFonts.poppins(
+      hintStyle: _helvetica(color: palette.inkFaint),
+      labelStyle: _helvetica(color: palette.inkMuted),
+      helperStyle: _helvetica(
         color: palette.inkFaint,
         fontSize: 12,
       ),
-      floatingLabelStyle: GoogleFonts.poppins(
+      floatingLabelStyle: _helvetica(
         color: palette.brand,
         fontWeight: FontWeight.w600,
       ),
@@ -376,7 +411,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
       indicatorColor: primary.withValues(alpha: isDark ? 0.28 : 0.12),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => GoogleFonts.poppins(
+        (states) => _helvetica(
           fontSize: 11,
           fontWeight: states.contains(WidgetState.selected)
               ? FontWeight.w700
@@ -398,7 +433,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: isDark ? palette.surfaceAlt : const Color(0xFF232B3E),
-      contentTextStyle: GoogleFonts.poppins(color: Colors.white),
+      contentTextStyle: _helvetica(color: Colors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
     dialogTheme: DialogThemeData(
@@ -408,7 +443,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: palette.border),
       ),
-      titleTextStyle: GoogleFonts.poppins(
+      titleTextStyle: _helvetica(
         color: palette.ink,
         fontSize: 19,
         fontWeight: FontWeight.w700,
@@ -429,7 +464,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
       hoverElevation: 0,
       highlightElevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      extendedTextStyle: GoogleFonts.poppins(
+      extendedTextStyle: _helvetica(
         fontSize: 13.5,
         fontWeight: FontWeight.w600,
       ),
@@ -449,11 +484,11 @@ ThemeData buildLookUpTheme(Brightness brightness) {
       dividerColor: palette.border,
       indicatorColor: palette.brand,
       indicatorSize: TabBarIndicatorSize.label,
-      labelStyle: GoogleFonts.poppins(
+      labelStyle: _helvetica(
         fontSize: 13.5,
         fontWeight: FontWeight.w600,
       ),
-      unselectedLabelStyle: GoogleFonts.poppins(
+      unselectedLabelStyle: _helvetica(
         fontSize: 13.5,
         fontWeight: FontWeight.w500,
       ),
@@ -470,7 +505,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
     chipTheme: base.chipTheme.copyWith(
       backgroundColor: palette.surfaceAlt,
       side: BorderSide(color: palette.border),
-      labelStyle: GoogleFonts.poppins(color: palette.ink, fontSize: 13),
+      labelStyle: _helvetica(color: palette.ink, fontSize: 13),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
@@ -479,7 +514,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
         selectedForegroundColor: palette.brand,
         foregroundColor: palette.inkMuted,
         side: BorderSide(color: palette.border),
-        textStyle: GoogleFonts.poppins(
+        textStyle: _helvetica(
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
@@ -490,7 +525,7 @@ ThemeData buildLookUpTheme(Brightness brightness) {
         color: isDark ? palette.surfaceAlt : const Color(0xFF232B3E),
         borderRadius: BorderRadius.circular(8),
       ),
-      textStyle: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+      textStyle: _helvetica(color: Colors.white, fontSize: 12),
     ),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: palette.brand,
@@ -505,4 +540,36 @@ ThemeData buildLookUpTheme(Brightness brightness) {
       thickness: const WidgetStatePropertyAll(6),
     ),
   );
+}
+
+/// Transición corta y uniforme: mantiene la orientación espacial sin hacer
+/// que los cambios de pantalla se sientan abruptos o llamativos.
+class _LookUpPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _LookUpPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (route.isFirst) return child;
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.88, end: 1).animate(curved),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.012, 0),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      ),
+    );
+  }
 }

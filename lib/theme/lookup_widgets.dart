@@ -456,7 +456,7 @@ class InfoRow extends StatelessWidget {
             const SizedBox(width: 12),
             if (constraints.maxWidth >= 520) ...[
               SizedBox(
-                width: 240,
+                width: 180,
                 child: Text(
                   label,
                   style: TextStyle(fontSize: 13.5, color: c.inkMuted),
