@@ -7,8 +7,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PostulacionService with ChangeNotifier {
   final ApiService _apiService = ApiService();
 
-  List<dynamic> _postulacionesPuesto = [];
-  List<dynamic> get postulacionesPuesto => _postulacionesPuesto;
+  final Map<String, List<dynamic>> _postulacionesPorPuesto = {};
+  final Map<String, String> _erroresPorPuesto = {};
+  final Set<String> _puestosCargando = {};
+  final Map<String, int> _requestVersions = {};
+
+  List<dynamic> postulacionesFor(String puestoId) =>
+      _postulacionesPorPuesto[puestoId] ?? const <dynamic>[];
+
+  bool isLoadingFor(String puestoId) => _puestosCargando.contains(puestoId);
+
+  String? errorFor(String puestoId) => _erroresPorPuesto[puestoId];
 
   List<dynamic> _eventos = [];
   List<dynamic> get eventos => _eventos;
@@ -17,23 +26,7 @@ class PostulacionService with ChangeNotifier {
   String? _eventosError;
   String? get eventosError => _eventosError;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
-  String? _errorMessage;
-  String? get errorMessage => _errorMessage;
   int _generation = 0;
-
-  void _setLoading(bool loading) {
-    if (_isLoading != loading) {
-      _isLoading = loading;
-      notifyListeners();
-    }
-  }
-
-  void _setError(String? message) {
-    _errorMessage = message;
-  }
 
   static const _lastSeenKey = 'lastSeenEventosEmpresa';
 
@@ -81,31 +74,47 @@ class PostulacionService with ChangeNotifier {
   /// Limpiar todos los datos de postulaciones (usado en logout)
   void clearData() {
     _generation++;
-    _postulacionesPuesto.clear();
+    _postulacionesPorPuesto.clear();
+    _erroresPorPuesto.clear();
+    _puestosCargando.clear();
+    _requestVersions.clear();
     _eventos = [];
     _unseenEventos = 0;
     _eventosError = null;
-    _isLoading = false;
-    _errorMessage = null;
     notifyListeners();
   }
 
   /// Obtener todas las postulaciones para un puesto especifico
   Future<void> fetchPostulacionesPorPuesto(String puestoId) async {
     final generation = _generation;
-    _setLoading(true);
-    _setError(null);
+    final requestVersion = (_requestVersions[puestoId] ?? 0) + 1;
+    _requestVersions[puestoId] = requestVersion;
+    _erroresPorPuesto.remove(puestoId);
+    _puestosCargando.add(puestoId);
+    notifyListeners();
     try {
       final response =
           await _apiService.get('postulacion/?puesto_id=$puestoId');
-      if (generation != _generation) return;
-      _postulacionesPuesto = response is List ? response : [];
+      if (generation != _generation ||
+          _requestVersions[puestoId] != requestVersion) {
+        return;
+      }
+      _postulacionesPorPuesto[puestoId] =
+          response is List ? response : <dynamic>[];
     } catch (e) {
-      if (generation != _generation) return;
-      _setError('Error al obtener postulaciones: $e');
+      if (generation != _generation ||
+          _requestVersions[puestoId] != requestVersion) {
+        return;
+      }
+      // Conserva el último resultado válido de esta misma vacante.
+      _erroresPorPuesto[puestoId] = 'Error al obtener postulaciones: $e';
       debugPrint('Error fetching postulaciones por puesto: $e');
     } finally {
-      if (generation == _generation) _setLoading(false);
+      if (generation == _generation &&
+          _requestVersions[puestoId] == requestVersion) {
+        _puestosCargando.remove(puestoId);
+        notifyListeners();
+      }
     }
   }
 
@@ -113,24 +122,34 @@ class PostulacionService with ChangeNotifier {
   Future<bool> updateEstadoPostulacion(
       String postulacionId, String nuevoEstado, String puestoId) async {
     final generation = _generation;
-    _setError(null);
+    _erroresPorPuesto.remove(puestoId);
     try {
       await _apiService.patch('postulacion/$postulacionId/estado', {
         'nuevo_estado': nuevoEstado,
       });
       if (generation != _generation) return false;
 
+      final cached = _postulacionesPorPuesto[puestoId];
+      if (cached != null) {
+        for (final postulacion in cached) {
+          if (postulacion is Map &&
+              postulacion['postulacion_id']?.toString() == postulacionId) {
+            postulacion['estado'] = nuevoEstado;
+            break;
+          }
+        }
+        notifyListeners();
+      }
       await fetchPostulacionesPorPuesto(puestoId);
-      notifyListeners();
       return true;
     } on ApiException catch (e) {
       if (generation != _generation) return false;
-      _setError(e.message);
+      _erroresPorPuesto[puestoId] = e.message;
       notifyListeners();
       return false;
     } catch (e) {
       if (generation != _generation) return false;
-      _setError('Error al actualizar estado: $e');
+      _erroresPorPuesto[puestoId] = 'Error al actualizar estado: $e';
       debugPrint('Error updating postulacion status: $e');
       notifyListeners();
       return false;

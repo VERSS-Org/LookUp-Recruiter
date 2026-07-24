@@ -68,33 +68,31 @@ class EditarPuestoPage extends StatelessWidget {
     final c = context.colors;
     return Scaffold(
       appBar: AppBar(title: Text(context.t('jobs.edit'))),
-      body: PageContainer(
+      body: ViewportScrollPage(
         maxWidth: 760,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                puesto['titulo']?.toString() ?? context.t('jobs.edit'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                context.t('jobs.edit.subtitle'),
-                style: TextStyle(color: c.inkMuted, fontSize: 14.5),
-              ),
-              const SizedBox(height: 20),
-              PuestoForm(
-                initial: puesto,
-                submitLabel: context.t('jobs.save'),
-                submittingLabel: context.t('jobs.saving'),
-                onSubmit: (data) => _actualizar(context, data),
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              puesto['titulo']?.toString() ?? context.t('jobs.edit'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              context.t('jobs.edit.subtitle'),
+              style: TextStyle(color: c.inkMuted, fontSize: 14.5),
+            ),
+            const SizedBox(height: 20),
+            PuestoForm(
+              initial: puesto,
+              submitLabel: context.t('jobs.save'),
+              submittingLabel: context.t('jobs.saving'),
+              onSubmit: (data) => _actualizar(context, data),
+            ),
+          ],
         ),
       ),
     );

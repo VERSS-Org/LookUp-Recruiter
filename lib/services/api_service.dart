@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message, {this.statusCode});
+  ApiException(this.message, {this.statusCode, this.isConnectionError = false});
 
   final String message;
   final int? statusCode;
+  final bool isConnectionError;
 
   bool get isUnauthorized =>
       statusCode == 401 || message.toLowerCase().contains('token');
@@ -26,6 +29,7 @@ class ApiService {
     defaultValue: 'http://localhost:8000/api/',
   );
   static final ApiService _instance = ApiService._internal();
+  static const Duration _requestTimeout = Duration(seconds: 8);
 
   factory ApiService() => _instance;
 
@@ -67,10 +71,12 @@ class ApiService {
     final url = _baseUri.resolve(endpoint);
     final headers = await _getHeaders();
 
-    var response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode(data),
+    var response = await _send(
+      () => http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(data),
+      ),
     );
 
     // Handle 307/308 redirects for POST requests
@@ -82,10 +88,12 @@ class ApiService {
         }
         final redirectUrl = url.resolve(location);
 
-        response = await http.post(
-          redirectUrl,
-          headers: headers,
-          body: jsonEncode(data),
+        response = await _send(
+          () => http.post(
+            redirectUrl,
+            headers: headers,
+            body: jsonEncode(data),
+          ),
         );
       }
     }
@@ -93,19 +101,23 @@ class ApiService {
     if (!retryOnUnauthorized) return _processResponse(response);
 
     return _processResponse(await _retryIfUnauthorized(response, () async {
-      var retry = await http.post(
-        url,
-        headers: await _getHeaders(),
-        body: jsonEncode(data),
+      var retry = await _send(
+        () async => http.post(
+          url,
+          headers: await _getHeaders(),
+          body: jsonEncode(data),
+        ),
       );
 
       if (retry.statusCode == 307 || retry.statusCode == 308) {
         final retryLocation = retry.headers['location'];
         if (retryLocation != null) {
-          retry = await http.post(
-            url.resolve(retryLocation),
-            headers: await _getHeaders(),
-            body: jsonEncode(data),
+          retry = await _send(
+            () async => http.post(
+              url.resolve(retryLocation),
+              headers: await _getHeaders(),
+              body: jsonEncode(data),
+            ),
           );
         }
       }
@@ -116,27 +128,33 @@ class ApiService {
   Future<dynamic> get(String endpoint) async {
     final url = _baseUri.resolve(endpoint);
     final headers = await _getHeaders();
-    final response = await http.get(url, headers: headers);
+    final response = await _send(() => http.get(url, headers: headers));
     return _processResponse(await _retryIfUnauthorized(
       response,
-      () async => http.get(url, headers: await _getHeaders()),
+      () async => _send(
+        () async => http.get(url, headers: await _getHeaders()),
+      ),
     ));
   }
 
   Future<dynamic> patch(String endpoint, Map<String, dynamic> data) async {
     final url = _baseUri.resolve(endpoint);
     final headers = await _getHeaders();
-    final response = await http.patch(
-      url,
-      headers: headers,
-      body: jsonEncode(data),
+    final response = await _send(
+      () => http.patch(
+        url,
+        headers: headers,
+        body: jsonEncode(data),
+      ),
     );
     return _processResponse(await _retryIfUnauthorized(
       response,
-      () async => http.patch(
-        url,
-        headers: await _getHeaders(),
-        body: jsonEncode(data),
+      () async => _send(
+        () async => http.patch(
+          url,
+          headers: await _getHeaders(),
+          body: jsonEncode(data),
+        ),
       ),
     ));
   }
@@ -144,17 +162,21 @@ class ApiService {
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
     final url = _baseUri.resolve(endpoint);
     final headers = await _getHeaders();
-    final response = await http.put(
-      url,
-      headers: headers,
-      body: jsonEncode(data),
+    final response = await _send(
+      () => http.put(
+        url,
+        headers: headers,
+        body: jsonEncode(data),
+      ),
     );
     return _processResponse(await _retryIfUnauthorized(
       response,
-      () async => http.put(
-        url,
-        headers: await _getHeaders(),
-        body: jsonEncode(data),
+      () async => _send(
+        () async => http.put(
+          url,
+          headers: await _getHeaders(),
+          body: jsonEncode(data),
+        ),
       ),
     ));
   }
@@ -173,8 +195,9 @@ class ApiService {
           filename: file.name,
         ),
       );
-      final streamed = await request.send();
-      return http.Response.fromStream(streamed);
+      return _send(
+        () async => http.Response.fromStream(await request.send()),
+      );
     }
 
     final response = await send();
@@ -194,13 +217,31 @@ class ApiService {
     return retry();
   }
 
+  Future<http.Response> _send(
+    Future<http.Response> Function() request,
+  ) async {
+    try {
+      return await request().timeout(_requestTimeout);
+    } on TimeoutException {
+      throw ApiException(
+        'El servidor tardó demasiado en responder. Inténtalo nuevamente.',
+        isConnectionError: true,
+      );
+    } on http.ClientException {
+      throw ApiException(
+        'No se pudo conectar con el servidor. Verifica que esté disponible.',
+        isConnectionError: true,
+      );
+    }
+  }
+
   dynamic _processResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) {
         return {}; // Successful but no content
       }
       try {
-        return jsonDecode(response.body);
+        return jsonDecode(utf8.decode(response.bodyBytes));
       } catch (e) {
         // If body is not a valid JSON, it might be an unhandled success case
         return response.body;
@@ -212,7 +253,7 @@ class ApiService {
       }
       dynamic decoded;
       try {
-        decoded = jsonDecode(response.body);
+        decoded = jsonDecode(utf8.decode(response.bodyBytes));
       } catch (_) {
         decoded = null;
       }

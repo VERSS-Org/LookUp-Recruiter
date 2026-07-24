@@ -29,6 +29,82 @@ class BrandMark extends StatelessWidget {
   }
 }
 
+/// Superficie de marca para momentos clave (acceso, cabeceras y vacantes).
+/// El degradado y los anillos son planos: no usan glow ni sombras.
+class BrandGradientPanel extends StatelessWidget {
+  const BrandGradientPanel({
+    super.key,
+    required this.child,
+    this.height,
+    this.padding = const EdgeInsets.all(24),
+    this.borderRadius = const BorderRadius.all(Radius.circular(14)),
+    this.showTopRightRing = true,
+    this.showBottomLeftRing = true,
+  });
+
+  final Widget child;
+  final double? height;
+  final EdgeInsetsGeometry padding;
+  final BorderRadius borderRadius;
+  final bool showTopRightRing;
+  final bool showBottomLeftRing;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const DecoratedBox(
+              decoration: BoxDecoration(gradient: kLookUpBrandGradient),
+            ),
+            if (showTopRightRing)
+              const Positioned(
+                right: -82,
+                top: -104,
+                child: _BrandRing(size: 286, stroke: 34),
+              ),
+            if (showBottomLeftRing)
+              const Positioned(
+                left: -92,
+                bottom: -142,
+                child: _BrandRing(size: 260, stroke: 30),
+              ),
+            Padding(padding: padding, child: child),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BrandRing extends StatelessWidget {
+  const _BrandRing({required this.size, required this.stroke});
+
+  final double size;
+  final double stroke;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.08),
+            width: stroke,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Texto auxiliar con una acción discreta, usado para alternar entre acceso y
 /// registro sin que la navegación parezca una pestaña o un botón principal.
 class InlinePromptLink extends StatelessWidget {
@@ -108,6 +184,7 @@ class InitialsAvatar extends StatelessWidget {
     this.color,
     this.imageUrl,
     this.fallbackIcon,
+    this.circular = false,
   });
 
   final String name;
@@ -115,12 +192,14 @@ class InitialsAvatar extends StatelessWidget {
   final Color? color;
   final String? imageUrl;
   final IconData? fallbackIcon;
+  final bool circular;
 
   @override
   Widget build(BuildContext context) {
     final url = imageUrl?.trim();
     if (url != null && url.isNotEmpty) {
-      return ClipOval(
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(circular ? size / 2 : size * 0.26),
         child: Image.network(
           url,
           width: size,
@@ -141,7 +220,9 @@ class InitialsAvatar extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: c.surfaceAlt,
-          borderRadius: BorderRadius.circular(size * 0.26),
+          borderRadius: BorderRadius.circular(
+            circular ? size / 2 : size * 0.26,
+          ),
         ),
         child: Icon(fallbackIcon, size: size * 0.5, color: c.inkFaint),
       );
@@ -158,7 +239,7 @@ class InitialsAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: base.withValues(alpha: c.chipAlpha + 0.04),
-        borderRadius: BorderRadius.circular(size * 0.26),
+        borderRadius: BorderRadius.circular(circular ? size / 2 : size * 0.26),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -192,7 +273,7 @@ class StatusChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: style.color.withValues(alpha: c.chipAlpha),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -229,83 +310,20 @@ class SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 2, bottom: 8),
+      padding: const EdgeInsets.only(top: 2, bottom: 10),
       child: Row(
         children: [
           Expanded(
             child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 16.5,
-                fontWeight: FontWeight.w700,
-                color: context.colors.ink,
-              ),
+              title.toUpperCase(),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: context.colors.inkFaint,
+                    letterSpacing: 1.05,
+                  ),
             ),
           ),
           if (actionLabel != null)
             TextButton(onPressed: onAction, child: Text(actionLabel!)),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tarjeta compacta con un indicador numerico.
-class StatCard extends StatelessWidget {
-  const StatCard({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: c.inkMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: c.ink,
-              height: 1,
-            ),
-          ),
         ],
       ),
     );
@@ -480,19 +498,37 @@ class InfoRow extends StatelessWidget {
   }
 }
 
-/// Envuelve el contenido para limitar el ancho en pantallas grandes (web).
-class PageContainer extends StatelessWidget {
-  const PageContainer({super.key, required this.child, this.maxWidth = 1100});
+/// Página desplazable cuyo viewport ocupa todo el ancho disponible.
+///
+/// El scrollbar queda en el borde de la ventana; únicamente la columna de
+/// contenido se centra y limita, evitando el aspecto de scroll “cortado”.
+class ViewportScrollPage extends StatelessWidget {
+  const ViewportScrollPage({
+    super.key,
+    required this.child,
+    this.maxWidth = 1160,
+    this.padding = const EdgeInsets.fromLTRB(22, 22, 22, 36),
+    this.controller,
+    this.physics,
+  });
 
   final Widget child;
   final double maxWidth;
+  final EdgeInsetsGeometry padding;
+  final ScrollController? controller;
+  final ScrollPhysics? physics;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: child,
+    return SingleChildScrollView(
+      controller: controller,
+      primary: controller == null,
+      physics: physics,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Padding(padding: padding, child: child),
+        ),
       ),
     );
   }
@@ -529,12 +565,7 @@ class ProfileBanner extends StatelessWidget {
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: c.ink,
-                height: 1.2,
-              ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             if (subtitle.isNotEmpty) ...[
               const SizedBox(height: 3),
@@ -561,12 +592,12 @@ class ProfileBanner extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Container(
+                BrandGradientPanel(
                   height: compact ? 92 : 110,
-                  decoration: BoxDecoration(
-                    color: kBrandBlue,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  padding: EdgeInsets.zero,
+                  borderRadius: BorderRadius.circular(12),
+                  showBottomLeftRing: false,
+                  child: const SizedBox.shrink(),
                 ),
                 Positioned(
                   left: compact ? 16 : 20,

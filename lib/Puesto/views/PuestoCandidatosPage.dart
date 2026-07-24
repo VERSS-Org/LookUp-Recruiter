@@ -24,6 +24,8 @@ class _CandidatosViewState extends State<CandidatosView>
   String _estadoFiltro = 'todos';
   final Set<String> _actualizando = {};
 
+  String get _puestoId => widget.puesto['puesto_id']?.toString() ?? '';
+
   @override
   bool get wantKeepAlive => true;
 
@@ -33,9 +35,21 @@ class _CandidatosViewState extends State<CandidatosView>
     WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
   }
 
+  @override
+  void didUpdateWidget(covariant CandidatosView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldId = oldWidget.puesto['puesto_id']?.toString() ?? '';
+    if (oldId != _puestoId) {
+      _estadoFiltro = 'todos';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _refresh();
+      });
+    }
+  }
+
   Future<void> _refresh() async {
-    final puestoId = widget.puesto['puesto_id']?.toString();
-    if (puestoId == null || puestoId.isEmpty) return;
+    final puestoId = _puestoId;
+    if (puestoId.isEmpty) return;
     await Provider.of<PostulacionService>(context, listen: false)
         .fetchPostulacionesPorPuesto(puestoId);
   }
@@ -69,13 +83,20 @@ class _CandidatosViewState extends State<CandidatosView>
     super.build(context);
     final c = context.colors;
     final postulacionService = context.watch<PostulacionService>();
+    final puestoId = _puestoId;
+    final todas = puestoId.isEmpty
+        ? const <dynamic>[]
+        : postulacionService.postulacionesFor(puestoId);
+    final loadError = puestoId.isEmpty
+        ? context.t('cand.load.error')
+        : postulacionService.errorFor(puestoId);
 
-    if (postulacionService.isLoading &&
-        postulacionService.postulacionesPuesto.isEmpty) {
+    if (puestoId.isNotEmpty &&
+        postulacionService.isLoadingFor(puestoId) &&
+        todas.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final todas = postulacionService.postulacionesPuesto;
     final postulaciones = _filtrar(todas);
     final filtroLabels = <String, String>{
       'todos': context.t('cand.all'),
@@ -88,22 +109,30 @@ class _CandidatosViewState extends State<CandidatosView>
 
     return RefreshIndicator(
       onRefresh: _refresh,
-      child: PageContainer(
-        maxWidth: 860,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(22, 18, 22, 32),
+      child: ViewportScrollPage(
+        maxWidth: 920,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          MediaQuery.sizeOf(context).width < 600 ? 18 : 28,
+          20,
+          MediaQuery.sizeOf(context).width < 600 ? 18 : 28,
+          36,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (postulacionService.errorMessage != null &&
-                todas.isNotEmpty) ...[
+            if (loadError != null && todas.isNotEmpty) ...[
               ErrorBanner(
+                key: const ValueKey('candidate-cache-error'),
                 message: context.t('cand.load.error'),
                 actionLabel: context.t('common.retry'),
                 onAction: _refresh,
               ),
               const SizedBox(height: 8),
             ],
-            if (postulacionService.errorMessage != null && todas.isEmpty)
+            if (loadError != null && todas.isEmpty)
               ErrorBanner(
+                key: const ValueKey('candidate-load-error'),
                 message: context.t('cand.load.error'),
                 actionLabel: context.t('common.retry'),
                 onAction: _refresh,
@@ -115,61 +144,84 @@ class _CandidatosViewState extends State<CandidatosView>
                 message: context.t('cand.empty.msg'),
               )
             else ...[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: PopupMenuButton<String>(
-                  key: const ValueKey('candidate-filter-menu'),
-                  initialValue: _estadoFiltro,
-                  position: PopupMenuPosition.under,
-                  constraints:
-                      const BoxConstraints(minWidth: 190, maxWidth: 240),
-                  tooltip: context.t('cand.status'),
-                  onSelected: (value) => setState(() => _estadoFiltro = value),
-                  itemBuilder: (context) => [
-                    for (final value in const [
-                      'todos',
-                      'pendiente',
-                      'en_revision',
-                      'entrevista',
-                      'aceptado',
-                      'rechazado',
-                    ])
-                      PopupMenuItem<String>(
-                        value: value,
-                        height: 44,
-                        child: Row(
-                          children: [
-                            Icon(
-                              value == _estadoFiltro
-                                  ? Icons.check
-                                  : Icons.circle_outlined,
-                              size: 18,
-                              color:
-                                  value == _estadoFiltro ? c.brand : c.inkFaint,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(filtroLabels[value]!),
-                          ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final filter = PopupMenuButton<String>(
+                    key: const ValueKey('candidate-filter-menu'),
+                    initialValue: _estadoFiltro,
+                    position: PopupMenuPosition.under,
+                    constraints:
+                        const BoxConstraints(minWidth: 190, maxWidth: 240),
+                    tooltip: context.t('cand.status'),
+                    onSelected: (value) =>
+                        setState(() => _estadoFiltro = value),
+                    itemBuilder: (context) => [
+                      for (final value in const [
+                        'todos',
+                        'pendiente',
+                        'en_revision',
+                        'entrevista',
+                        'aceptado',
+                        'rechazado',
+                      ])
+                        PopupMenuItem<String>(
+                          value: value,
+                          height: 44,
+                          child: Row(
+                            children: [
+                              Icon(
+                                value == _estadoFiltro
+                                    ? Icons.check
+                                    : Icons.circle_outlined,
+                                size: 18,
+                                color: value == _estadoFiltro
+                                    ? c.brand
+                                    : c.inkFaint,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(filtroLabels[value]!),
+                            ],
+                          ),
                         ),
+                    ],
+                    child: IgnorePointer(
+                      child: OutlinedButton.icon(
+                        key: const ValueKey('candidate-filter-trigger'),
+                        onPressed: () {},
+                        icon: const Icon(Icons.filter_list, size: 18),
+                        label: Text(
+                          '${filtroLabels[_estadoFiltro]} · ${postulaciones.length}',
+                        ),
+                        iconAlignment: IconAlignment.start,
                       ),
-                  ],
-                  child: IgnorePointer(
-                    child: OutlinedButton.icon(
-                      key: const ValueKey('candidate-filter-trigger'),
-                      onPressed: () {},
-                      icon: const Icon(Icons.filter_list, size: 18),
-                      label: Text(filtroLabels[_estadoFiltro]!),
-                      iconAlignment: IconAlignment.start,
                     ),
-                  ),
-                ),
+                  );
+                  final title = Text(
+                    '${context.t('cand.title')} — ${widget.puesto['titulo'] ?? ''}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  );
+                  if (constraints.maxWidth < 620) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        title,
+                        const SizedBox(height: 12),
+                        filter,
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: title),
+                      const SizedBox(width: 16),
+                      filter,
+                    ],
+                  );
+                },
               ),
-              const SizedBox(height: 12),
-              Text(
-                '${postulaciones.length} ${postulaciones.length == 1 ? context.t('cand.count.one') : context.t('cand.count')}',
-                style: TextStyle(color: c.inkFaint, fontSize: 13),
-              ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 14),
               if (postulaciones.isEmpty)
                 EmptyState(
                   icon: Icons.filter_alt_off_outlined,
@@ -235,8 +287,8 @@ class _CandidatosViewState extends State<CandidatosView>
 
     final postulacionService =
         Provider.of<PostulacionService>(context, listen: false);
-    final puestoId = widget.puesto['puesto_id']?.toString();
-    if (puestoId == null || puestoId.isEmpty) return;
+    final puestoId = _puestoId;
+    if (puestoId.isEmpty) return;
 
     setState(() => _actualizando.add(postulacionId));
     final success = await postulacionService.updateEstadoPostulacion(
@@ -251,7 +303,7 @@ class _CandidatosViewState extends State<CandidatosView>
       SnackBar(
         content: Text(success
             ? '${context.tr('cand.status.updated')} ${estadoStyle(context, nuevoEstado).label}'
-            : postulacionService.errorMessage ??
+            : postulacionService.errorFor(puestoId) ??
                 context.tr('common.error.generic')),
         backgroundColor: success ? null : context.colors.danger,
       ),
@@ -323,6 +375,11 @@ class _CandidatoRow extends StatelessWidget {
     );
   }
 
+  int get _documentCount {
+    final documents = postulacion['documentos_adjuntos'];
+    return documents is List ? documents.length : 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -354,8 +411,9 @@ class _CandidatoRow extends StatelessWidget {
             children: [
               InitialsAvatar(
                 name: nombre,
-                size: 46,
+                size: 40,
                 imageUrl: candidato['foto_url']?.toString(),
+                circular: true,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -365,7 +423,7 @@ class _CandidatoRow extends StatelessWidget {
                     Text(
                       nombre,
                       style: TextStyle(
-                        fontSize: 15.5,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         color: c.ink,
                       ),
@@ -373,12 +431,30 @@ class _CandidatoRow extends StatelessWidget {
                     if (detalles.isNotEmpty)
                       Text(
                         detalles,
-                        style: TextStyle(fontSize: 13, color: c.inkMuted),
+                        style: TextStyle(fontSize: 12, color: c.inkMuted),
                       ),
                     Text(
                       '${context.t('cand.applied')} ${_formatDate(context, postulacion['fecha_postulacion'])}',
-                      style: TextStyle(fontSize: 12.5, color: c.inkFaint),
+                      style: TextStyle(fontSize: 12, color: c.inkFaint),
                     ),
+                    if (_documentCount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.description_outlined,
+                              size: 12,
+                              color: c.inkFaint,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$_documentCount ${context.t(_documentCount == 1 ? 'cand.doc.one' : 'cand.docs')}',
+                              style: TextStyle(fontSize: 12, color: c.inkFaint),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -386,7 +462,10 @@ class _CandidatoRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _StatusMenu(
                 current: estadoActual,
@@ -394,17 +473,13 @@ class _CandidatoRow extends StatelessWidget {
                 enabled: estadosDisponibles.length > 1 && !isUpdating,
                 onSelected: onCambiarEstado,
               ),
-              if (isUpdating) ...[
-                const SizedBox(width: 8),
+              if (isUpdating)
                 const SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-              ],
-              const SizedBox(width: 8),
-              IconButton.outlined(
-                tooltip: context.t('cand.view_profile'),
+              OutlinedButton.icon(
                 onPressed: candidato['cuenta_id'] == null
                     ? null
                     : () => Navigator.push(
@@ -412,18 +487,19 @@ class _CandidatoRow extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (_) => CandidatoPerfilPage(
                               cuentaId: candidato['cuenta_id'].toString(),
+                              onContact: () => _abrirChat(context, candidato),
                             ),
                           ),
                         ),
                 icon: const Icon(Icons.person_search_outlined, size: 20),
+                label: Text(context.t('cand.view_profile')),
               ),
-              const SizedBox(width: 6),
-              IconButton.filledTonal(
-                tooltip: context.t('cand.contact'),
+              FilledButton.tonalIcon(
                 onPressed: candidato['cuenta_id'] == null
                     ? null
                     : () => _abrirChat(context, candidato),
                 icon: const Icon(Icons.chat_outlined, size: 20),
+                label: Text(context.t('cand.contact')),
               ),
             ],
           ),

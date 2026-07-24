@@ -16,6 +16,7 @@ import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/services/postulacion_service.dart';
 import 'package:lookup_flutter/services/profile_service.dart';
 import 'package:lookup_flutter/services/puesto_service.dart';
+import 'package:lookup_flutter/services/theme_controller.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
@@ -42,7 +43,7 @@ class _CandidatePostulacionService extends PostulacionService {
   ];
 
   @override
-  List<dynamic> get postulacionesPuesto => _items;
+  List<dynamic> postulacionesFor(String puestoId) => _items;
 
   @override
   Future<void> fetchPostulacionesPorPuesto(String puestoId) async {}
@@ -90,6 +91,19 @@ class _ThreadContactoService extends ContactoService {
   Future<List<dynamic>> fetchContactos(String postulacionId) async => [];
 
   @override
+  List<dynamic> contactosFor(String postulacionId) => const [
+        {
+          'contacto_id': 'message-1',
+          'remitente_rol': 'empresa',
+          'fecha_hora': '2026-07-12T10:10:00Z',
+          'ultimo_feedback': {
+            'tipo': 'otro',
+            'mensaje': 'Gracias por postular.',
+          },
+        },
+      ];
+
+  @override
   Future<void> marcarLeidos(String postulacionId) async {}
 }
 
@@ -99,18 +113,21 @@ class _VacancyAuthService extends AuthService {
 }
 
 class _VacancyPuestoService extends PuestoService {
-  final List<dynamic> _items = [
-    {
-      'puesto_id': 'job-1',
-      'empresa_id': 'company-1',
-      'titulo': 'Frontend',
-      'descripcion': 'Construir interfaces accesibles.',
-      'ubicacion': 'Lima',
-      'tipo_contrato': 'jornada_completa',
-      'estado': 'abierto',
-      'fecha_publicacion': '2026-07-12T10:00:00Z',
-    },
-  ];
+  _VacancyPuestoService({String estado = 'abierto'})
+      : _items = [
+          {
+            'puesto_id': 'job-1',
+            'empresa_id': 'company-1',
+            'titulo': 'Frontend',
+            'descripcion': 'Construir interfaces accesibles.',
+            'ubicacion': 'Lima',
+            'tipo_contrato': 'jornada_completa',
+            'estado': estado,
+            'fecha_publicacion': '2026-07-12T10:00:00Z',
+          },
+        ];
+
+  final List<dynamic> _items;
 
   @override
   List<dynamic> get puestosEmpresa => _items;
@@ -160,6 +177,7 @@ Widget _navigationShell() {
       ChangeNotifierProvider<ContactoService>(
         create: (_) => _ContactoService(),
       ),
+      ChangeNotifierProvider(create: (_) => ThemeController()),
       ChangeNotifierProvider(create: (_) => LocaleController()),
     ],
     child: MaterialApp(
@@ -233,11 +251,12 @@ Widget _vacancyListShell() {
   );
 }
 
-Widget _vacancyDetailShell() {
+Widget _vacancyDetailShell({String estado = 'abierto'}) {
+  final puestoService = _VacancyPuestoService(estado: estado);
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<PuestoService>(
-        create: (_) => _VacancyPuestoService(),
+        create: (_) => puestoService,
       ),
       ChangeNotifierProvider<PostulacionService>(
         create: (_) => _CandidatePostulacionService(),
@@ -248,7 +267,7 @@ Widget _vacancyDetailShell() {
       theme: buildLookUpTheme(Brightness.light),
       home: DetallePuestoPage(
         puesto: Map<String, dynamic>.from(
-          _VacancyPuestoService().puestosEmpresa.first as Map,
+          puestoService.puestosEmpresa.first as Map,
         ),
       ),
     ),
@@ -347,6 +366,24 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('mobile vacancy rows keep their operational metadata readable', (
+    tester,
+  ) async {
+    _setViewport(tester, const Size(360, 800));
+    await tester.pumpWidget(_vacancyListShell());
+    await tester.pumpAndSettle();
+
+    final metadata = find.byWidgetPredicate(
+      (widget) =>
+          widget is Text &&
+          (widget.data?.contains('Lima') ?? false) &&
+          (widget.data?.contains('Publicada') ?? false),
+    );
+    expect(metadata, findsOneWidget);
+    expect(tester.widget<Text>(metadata).maxLines, 2);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('desktop company navbar matches the applicant visual pattern', (
     tester,
   ) async {
@@ -356,18 +393,18 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     final navbar = find.byKey(const ValueKey('desktop-company-navbar'));
-    expect(tester.getSize(navbar), const Size(1440, 64));
+    expect(tester.getSize(navbar), const Size(1440, 52));
     expect(
       find.descendant(of: navbar, matching: find.byIcon(Icons.home_outlined)),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       find.descendant(of: navbar, matching: find.byIcon(Icons.work_outline)),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
-      find.descendant(of: navbar, matching: find.text('Empresa')),
-      findsNothing,
+      find.descendant(of: navbar, matching: find.text('EMPRESAS')),
+      findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey('desktop-company-profile-menu')),
@@ -400,12 +437,9 @@ void main() {
     final home = find.descendant(of: navbar, matching: find.text('Inicio'));
     final homeText = tester.widget<Text>(home);
 
-    expect(tester.getTopLeft(logo).dx, closeTo(18, 1));
-    expect(
-      tester.getTopLeft(home).dx - tester.getTopRight(logo).dx,
-      closeTo(19, 1),
-    );
-    expect(homeText.style?.fontSize, 13.5);
+    expect(tester.getTopLeft(logo).dx, closeTo(16, 1));
+    expect(homeText.style?.fontSize, 11.5);
+    expect(find.text('EMPRESAS'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -425,12 +459,33 @@ void main() {
     expect(find.text('Frontend'), findsOneWidget);
     expect(find.text('Detalle'), findsOneWidget);
 
-    final edit = find.widgetWithText(OutlinedButton, 'Editar vacante');
+    final edit = find.widgetWithText(FilledButton, 'Editar vacante');
     final close = find.widgetWithText(OutlinedButton, 'Cerrar vacante');
     expect(edit, findsOneWidget);
     expect(close, findsOneWidget);
     expect(tester.getSize(edit).width, lessThan(300));
     expect(tester.getSize(close).width, lessThan(300));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('closed vacancy explains the reopen action', (tester) async {
+    _setViewport(tester, const Size(1440, 900));
+    await tester.pumpWidget(_vacancyDetailShell(estado: 'cerrado'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reabrir vacante'), findsOneWidget);
+    expect(
+      find.text(
+        'Al reabrirla, volverá a ser visible y aceptará nuevas postulaciones.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Al cerrarla, los postulantes dejan de verla. Puedes reabrirla cuando quieras.',
+      ),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -441,16 +496,17 @@ void main() {
     await tester.pumpWidget(_messagesShell());
     await tester.pumpAndSettle();
 
-    expect(find.text('Ana Torres'), findsOneWidget);
-    final placeholder = find.byKey(const ValueKey('messages-empty-selection'));
-    expect(placeholder, findsOneWidget);
-    expect(
-      find.descendant(
-        of: placeholder,
-        matching: find.text('Aún no tienes mensajes'),
-      ),
-      findsNothing,
+    expect(find.text('Ana Torres'), findsNWidgets(2));
+    final selected = tester.widget<Container>(
+      find.byKey(const ValueKey('selected-message-thread')),
     );
+    final selectedDecoration = selected.decoration! as BoxDecoration;
+    final selectedBorder = selectedDecoration.border! as Border;
+    expect(selectedBorder.left.width, 3);
+    final placeholder = find.byKey(const ValueKey('messages-empty-selection'));
+    expect(placeholder, findsNothing);
+    expect(find.byType(ChatEmpresaView), findsOneWidget);
+    expect(find.text('Aún no tienes mensajes'), findsNothing);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -461,8 +517,8 @@ void main() {
     await tester.pumpWidget(_messagesShell());
     await tester.pumpAndSettle();
 
-    expect(find.text('Mensajes'), findsNothing);
-    expect(find.byType(BrandMark), findsOneWidget);
+    expect(find.text('Mensajes'), findsOneWidget);
+    expect(find.byType(BrandMark), findsNothing);
     final mobileList =
         find.byKey(const ValueKey('mobile-message-list-content'));
     expect(mobileList, findsOneWidget);
@@ -476,6 +532,15 @@ void main() {
     expect(find.byType(ChatEmpresaView), findsOneWidget);
     expect(find.byTooltip('Volver'), findsOneWidget);
     expect(find.text('Frontend'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('company-chat-header'))).height,
+      52,
+    );
+    expect(find.byType(StatusChip), findsNothing);
+    final bubble = tester.widget<Container>(
+      find.byKey(const ValueKey('chat-bubble-message-1')),
+    );
+    expect((bubble.margin! as EdgeInsets).left, 34);
     expect(tester.takeException(), isNull);
 
     await tester.binding.handlePopRoute();
@@ -502,11 +567,11 @@ void main() {
       const ValueKey('desktop-notifications-popup'),
     );
     expect(popup, findsOneWidget);
-    expect(tester.getSize(popup), const Size(420, 480));
+    expect(tester.getSize(popup), const Size(420, 430));
     expect(tester.getTopRight(popup).dx, lessThanOrEqualTo(1440));
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byTooltip('Cerrar'));
+    await tester.tapAt(const Offset(24, 760));
     await tester.pumpAndSettle();
     expect(popup, findsNothing);
 

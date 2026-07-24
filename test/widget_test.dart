@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -30,6 +32,18 @@ class _FakePostulacionService extends PostulacionService {
 class _FakeAuthService extends AuthService {
   @override
   String? get cuentaId => 'empresa-test';
+}
+
+class _RetryBootAuthService extends AuthService {
+  int attempts = 0;
+  final Completer<bool> firstAttempt = Completer<bool>();
+
+  @override
+  Future<bool> tryAutoLogin() {
+    attempts++;
+    if (attempts == 1) return firstAttempt.future;
+    return Future.value(false);
+  }
 }
 
 class _FakeProfileService extends ProfileService {
@@ -89,6 +103,7 @@ Widget _testShell() {
       ChangeNotifierProvider<ContactoService>(
         create: (_) => _FakeContactoService(),
       ),
+      ChangeNotifierProvider(create: (_) => ThemeController()),
       ChangeNotifierProvider(create: (_) => LocaleController()),
     ],
     child: MaterialApp(
@@ -135,11 +150,44 @@ Widget _profileShell(
 }
 
 void main() {
-  test('theme uses Helvetica and one transition language on every platform',
-      () {
+  testWidgets('session bootstrap times out and offers a working retry', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final auth = _RetryBootAuthService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthService>.value(value: auth),
+          ChangeNotifierProvider(create: (_) => LocaleController()),
+        ],
+        child: MaterialApp(
+          theme: buildLookUpTheme(Brightness.light),
+          home: const SessionGate(
+            bootTimeout: Duration(milliseconds: 20),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump(const Duration(milliseconds: 25));
+    await tester.pump();
+    expect(find.text('No pudimos conectar con LookUp'), findsOneWidget);
+    expect(find.text('Reintentar'), findsOneWidget);
+
+    await tester.tap(find.text('Reintentar'));
+    await tester.pumpAndSettle();
+    expect(auth.attempts, 2);
+    expect(find.text('Inicia sesión'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('theme uses Sora, Manrope and one transition language everywhere', () {
     final theme = buildLookUpTheme(Brightness.light);
 
-    expect(theme.textTheme.bodyMedium?.fontFamily, 'Helvetica');
+    expect(theme.textTheme.headlineMedium?.fontFamily, 'Sora');
+    expect(theme.textTheme.bodyMedium?.fontFamily, 'Manrope');
     expect(
       theme.textTheme.bodyMedium?.fontFamilyFallback,
       containsAll(<String>['Arial', 'sans-serif']),
@@ -150,7 +198,7 @@ void main() {
     );
   });
 
-  testWidgets('desktop login uses one centered form without a side panel', (
+  testWidgets('desktop login uses the branded split layout', (
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -159,14 +207,11 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Bienvenido a LookUp'), findsOneWidget);
-    expect(find.text('Iniciar Sesión'), findsOneWidget);
-    expect(find.text('Portal de empresas'), findsNothing);
+    expect(find.text('Inicia sesión'), findsOneWidget);
+    expect(find.text('El talento adecuado,\nsin vueltas.'), findsOneWidget);
+    expect(find.text('LookUp Empresas'), findsOneWidget);
     expect(find.byType(BrandMark), findsOneWidget);
-    expect(
-      tester.getCenter(find.text('Bienvenido a LookUp')).dx,
-      closeTo(720, 1),
-    );
+    expect(tester.getCenter(find.text('Inicia sesión')).dx, greaterThan(720));
     expect(tester.takeException(), isNull);
   });
 
@@ -187,10 +232,31 @@ void main() {
     expect(find.byType(BrandMark), findsOneWidget);
     expect(find.byType(InlinePromptLink), findsOneWidget);
     expect(find.text('Inicia sesión'), findsOneWidget);
+    expect(
+      tester
+          .widget<Icon>(
+            find.byKey(const ValueKey('password-strength-icon')),
+          )
+          .icon,
+      Icons.info_outline_rounded,
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('company-register-password-field')),
+      'Segura123!',
+    );
+    await tester.pump();
+    expect(
+      tester
+          .widget<Icon>(
+            find.byKey(const ValueKey('password-strength-icon')),
+          )
+          .icon,
+      Icons.check_circle,
+    );
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('mobile shell keeps messages left and alerts by profile', (
+  testWidgets('mobile shell keeps core navigation visible at the bottom', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -199,13 +265,15 @@ void main() {
     await tester.pumpWidget(_testShell());
     await tester.pump(const Duration(milliseconds: 100));
 
-    final chatX = tester.getCenter(find.byTooltip('Mensajes')).dx;
-    final logoX = tester.getCenter(find.byType(BrandMark)).dx;
     final notificationX = tester.getCenter(find.byTooltip('Notificaciones')).dx;
     final profileX = tester.getCenter(find.byType(InitialsAvatar)).dx;
 
-    expect(chatX, lessThan(logoX));
     expect(notificationX, lessThan(profileX));
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Inicio'), findsOneWidget);
+    expect(find.text('Vacantes'), findsWidgets);
+    expect(find.text('Mensajes'), findsOneWidget);
+    expect(find.text('Perfil de empresa'), findsOneWidget);
     expect(find.text('Publicar vacante'), findsNothing);
     expect(tester.takeException(), isNull);
 
@@ -218,7 +286,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('desktop messages use one compact panel without a second title', (
+  testWidgets('desktop messages use one compact contextual sidebar', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -231,15 +299,15 @@ void main() {
 
     final panel = find.byKey(const ValueKey('desktop-message-list-panel'));
     expect(panel, findsOneWidget);
-    expect(tester.getSize(panel).width, 360);
-    expect(find.text('Mensajes'), findsNothing);
+    expect(tester.getSize(panel).width, 300);
+    expect(find.text('Mensajes'), findsOneWidget);
     expect(find.text('Buscar conversaciones'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('message route uses compact branded navigation below 960px', (
+  testWidgets('messages keep the mobile bottom navigation below 960px', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -247,7 +315,7 @@ void main() {
 
     await tester.pumpWidget(_testShell());
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.tap(find.byTooltip('Mensajes'));
+    await tester.tap(find.text('Mensajes'));
     await tester.pumpAndSettle();
 
     expect(
@@ -258,12 +326,12 @@ void main() {
       find.byKey(const ValueKey('desktop-message-list-panel')),
       findsNothing,
     );
-    expect(find.text('Mensajes'), findsNothing);
-    expect(find.byType(BrandMark), findsOneWidget);
-    expect(find.byTooltip('Volver'), findsOneWidget);
+    expect(find.text('Mensajes'), findsNWidgets(2));
+    expect(find.byType(BrandMark), findsNothing);
+    expect(find.byType(NavigationBar), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byTooltip('Volver'));
+    await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
     expect(find.text('Inicio'), findsWidgets);
 
@@ -281,7 +349,7 @@ void main() {
 
     expect(
       tester.getSize(find.byKey(const ValueKey('desktop-company-navbar'))),
-      const Size(1440, 64),
+      const Size(1440, 52),
     );
     final sectionSwitcher = tester.widget<AnimatedSwitcher>(
       find.byType(AnimatedSwitcher),
@@ -301,7 +369,7 @@ void main() {
     await tester.tap(find.text('Vacantes'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Vacantes'), findsOneWidget);
+    expect(find.text('Vacantes'), findsWidgets);
     expect(
         find.byKey(const ValueKey('publish-vacancy-button')), findsOneWidget);
     expect(find.text('Publicar vacante'), findsOneWidget);
@@ -321,6 +389,7 @@ void main() {
     await tester.tap(find.text('Vacantes').first);
     await tester.pumpAndSettle();
     expect(find.text('Detalle temporal'), findsNothing);
+    expect(find.text('Vacantes'), findsWidgets);
     expect(
       find.byKey(const ValueKey('publish-vacancy-button')),
       findsOneWidget,
@@ -375,6 +444,7 @@ void main() {
       find.byKey(const ValueKey('company-edit-profile-action')),
       findsOneWidget,
     );
+    expect(find.text('Cerrar sesión'), findsNothing);
     expect(find.text('Editar perfil'), findsNothing);
     expect(find.byTooltip('Editar perfil'), findsOneWidget);
     expect(find.text('Editar'), findsOneWidget);
@@ -382,16 +452,11 @@ void main() {
     expect(find.text('Empresa Prueba'), findsOneWidget);
     expect(find.text(' Empresa Prueba '), findsNothing);
     expect(find.text(' Lima '), findsNothing);
-    expect(find.text('empresa@lookup.test'), findsNWidgets(2));
+    expect(find.text('empresa@lookup.test'), findsOneWidget);
     expect(find.text(' empresa@lookup.test '), findsNothing);
-    final emailX = tester
-        .getTopLeft(
-          find.descendant(
-            of: find.byKey(const ValueKey('company-email-row')),
-            matching: find.text('empresa@lookup.test'),
-          ),
-        )
-        .dx;
+    expect(find.byKey(const ValueKey('company-email-row')), findsNothing);
+    final profileScroll = find.byKey(const ValueKey('company-profile-scroll'));
+    expect(tester.getSize(profileScroll).width, closeTo(1440, 1));
     final phoneX = tester
         .getTopLeft(
           find.descendant(
@@ -408,17 +473,7 @@ void main() {
           ),
         )
         .dx;
-    final emailLabelRight = tester
-        .getTopRight(
-          find.descendant(
-            of: find.byKey(const ValueKey('company-email-row')),
-            matching: find.text('Correo electrónico'),
-          ),
-        )
-        .dx;
-    expect(phoneX, closeTo(emailX, 1));
-    expect(cityX, closeTo(emailX, 1));
-    expect(emailX - emailLabelRight, lessThan(100));
+    expect(phoneX, closeTo(cityX, 1));
 
     await tester.tap(find.byTooltip('Editar perfil'));
     await tester.pumpAndSettle();
@@ -461,6 +516,7 @@ void main() {
       find.byKey(const ValueKey('company-edit-profile-action')),
       findsOneWidget,
     );
+    expect(find.text('Cerrar sesión'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

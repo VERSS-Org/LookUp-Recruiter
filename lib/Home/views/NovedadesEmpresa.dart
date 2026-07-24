@@ -11,10 +11,12 @@ class NovedadesEmpresa extends StatefulWidget {
     super.key,
     this.showBack = false,
     this.compact = false,
+    this.compactHeight = 430,
   });
 
   final bool showBack;
   final bool compact;
+  final double compactHeight;
 
   @override
   State<NovedadesEmpresa> createState() => _NovedadesEmpresaState();
@@ -27,6 +29,7 @@ class _NovedadesEmpresaState extends State<NovedadesEmpresa> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final service = context.read<PostulacionService>();
       await service.fetchEventos();
+      if (!mounted || widget.compact || service.eventosError != null) return;
       await service.markEventosSeen();
     });
   }
@@ -58,98 +61,106 @@ class _NovedadesEmpresaState extends State<NovedadesEmpresa> {
     final service = context.watch<PostulacionService>();
     final c = context.colors;
     final eventos = service.eventos;
+
+    Widget eventRow(int index) {
+      final evento = eventos[index] is Map
+          ? Map<String, dynamic>.from(eventos[index] as Map)
+          : const <String, dynamic>{};
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InitialsAvatar(
+              name: evento['descripcion']?.toString() ??
+                  context.t('common.applicant'),
+              size: widget.compact ? 34 : 40,
+              circular: true,
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text:
+                          '${evento['descripcion'] ?? context.t('common.applicant')} ',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    TextSpan(text: '${context.t('notif.applied')} '),
+                    TextSpan(
+                      text: evento['titulo']?.toString() ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: c.ink,
+                  fontSize: widget.compact ? 11.5 : 13,
+                  height: 1.35,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              _relativa(context, evento['fecha']?.toString()),
+              style: TextStyle(color: c.inkFaint, fontSize: 12),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final statusContent = service.eventosError != null && eventos.isEmpty
+        ? <Widget>[
+            ErrorBanner(
+              message: context.t('notif.load.error'),
+              actionLabel: context.t('common.retry'),
+              onAction: () => context.read<PostulacionService>().fetchEventos(),
+            ),
+          ]
+        : eventos.isEmpty
+            ? <Widget>[
+                EmptyState(
+                  icon: Icons.notifications_none,
+                  title: context.t('notif.empty.title'),
+                  message: context.t('notif.empty.msg'),
+                ),
+              ]
+            : <Widget>[
+                for (var index = 0; index < eventos.length; index++) ...[
+                  eventRow(index),
+                  if (index < eventos.length - 1)
+                    Divider(color: c.border, height: 1, indent: 56),
+                ],
+              ];
+
     final content = RefreshIndicator(
       onRefresh: () => context.read<PostulacionService>().fetchEventos(),
-      child: PageContainer(
-        maxWidth: 700,
-        child: service.eventosError != null && eventos.isEmpty
-            ? ListView(
-                padding: const EdgeInsets.all(22),
-                children: [
-                  ErrorBanner(
-                    message: context.t('notif.load.error'),
-                    actionLabel: context.t('common.retry'),
-                    onAction: () =>
-                        context.read<PostulacionService>().fetchEventos(),
-                  ),
-                ],
-              )
-            : eventos.isEmpty
-                ? ListView(
-                    padding: const EdgeInsets.all(22),
-                    children: [
-                      EmptyState(
-                        icon: Icons.notifications_none,
-                        title: context.t('notif.empty.title'),
-                        message: context.t('notif.empty.msg'),
-                      ),
-                    ],
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: eventos.length,
-                    separatorBuilder: (_, index) =>
-                        Divider(color: c.border, height: 1, indent: 56),
-                    itemBuilder: (context, index) {
-                      final evento = eventos[index] is Map
-                          ? Map<String, dynamic>.from(eventos[index] as Map)
-                          : const <String, dynamic>{};
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.person_add_alt_outlined,
-                              size: 20,
-                              color: c.inkFaint,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    evento['titulo']?.toString() ?? '—',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: c.ink,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${evento['descripcion'] ?? ''} ${context.t('notif.applied')} ${evento['titulo'] ?? ''}',
-                                    style: TextStyle(
-                                      color: c.inkMuted,
-                                      fontSize: 13,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              _relativa(context, evento['fecha']?.toString()),
-                              style: TextStyle(color: c.inkFaint, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-      ),
+      child: widget.compact
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: statusContent,
+            )
+          : ViewportScrollPage(
+              maxWidth: 700,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: statusContent,
+              ),
+            ),
     );
 
     if (widget.compact) {
       return SizedBox(
         key: const ValueKey('desktop-notifications-popup'),
         width: 420,
-        height: 480,
+        height: widget.compactHeight,
         child: Column(
           children: [
             Padding(
@@ -162,10 +173,13 @@ class _NovedadesEmpresaState extends State<NovedadesEmpresa> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  IconButton(
-                    tooltip: context.t('common.close'),
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
+                  TextButton(
+                    onPressed: service.unseenEventos == 0
+                        ? null
+                        : () => context
+                            .read<PostulacionService>()
+                            .markEventosSeen(),
+                    child: Text(context.t('notif.mark_read')),
                   ),
                 ],
               ),

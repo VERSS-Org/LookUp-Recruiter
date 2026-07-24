@@ -12,6 +12,7 @@ class ContactoService with ChangeNotifier {
   String? _bandejaError;
   List<dynamic> _bandeja = [];
   final Map<String, List<dynamic>> _contactosPorPostulacion = {};
+  final Map<String, String> _erroresPorPostulacion = {};
   final Set<String> _contactosCargando = {};
   int _generation = 0;
 
@@ -30,6 +31,8 @@ class ContactoService with ChangeNotifier {
 
   List<dynamic> contactosFor(String postulacionId) =>
       _contactosPorPostulacion[postulacionId] ?? const <dynamic>[];
+  String? contactosErrorFor(String postulacionId) =>
+      _erroresPorPostulacion[postulacionId];
   bool isLoadingContactos(String postulacionId) =>
       _contactosCargando.contains(postulacionId);
 
@@ -48,6 +51,7 @@ class ContactoService with ChangeNotifier {
     _generation++;
     _bandeja = [];
     _contactosPorPostulacion.clear();
+    _erroresPorPostulacion.clear();
     _contactosCargando.clear();
     _isLoading = false;
     _errorMessage = null;
@@ -83,7 +87,7 @@ class ContactoService with ChangeNotifier {
       return contactosFor(postulacionId);
     }
     final generation = _generation;
-    _setError(null);
+    _erroresPorPostulacion.remove(postulacionId);
     _contactosCargando.add(postulacionId);
     notifyListeners();
     try {
@@ -92,13 +96,16 @@ class ContactoService with ChangeNotifier {
       if (generation != _generation) return const <dynamic>[];
       final contactos = response is List ? response : <dynamic>[];
       _contactosPorPostulacion[postulacionId] = contactos;
+      _erroresPorPostulacion.remove(postulacionId);
       return contactos;
     } catch (e) {
       if (generation != _generation) return const <dynamic>[];
-      _setError('Error al cargar la conversación: $e');
+      _erroresPorPostulacion[postulacionId] =
+          'Error al cargar la conversación: $e';
       debugPrint('Error fetching contacts: $e');
-      _contactosPorPostulacion[postulacionId] = <dynamic>[];
-      return const <dynamic>[];
+      // Mantiene el último hilo válido para que un fallo transitorio no haga
+      // desaparecer mensajes que el usuario ya había visto.
+      return contactosFor(postulacionId);
     } finally {
       if (generation == _generation) {
         _contactosCargando.remove(postulacionId);
