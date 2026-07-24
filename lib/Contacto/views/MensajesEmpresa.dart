@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
 import 'package:lookup_flutter/services/contacto_service.dart';
 import 'package:lookup_flutter/services/locale_controller.dart';
+import 'package:lookup_flutter/Perfil/views/CandidatoPerfilPage.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
@@ -13,9 +14,14 @@ import 'package:lookup_flutter/theme/lookup_widgets.dart';
 /// En pantallas anchas: dos paneles (lista de chats + conversación). En
 /// móvil: lista y chat apilados.
 class MensajesEmpresa extends StatefulWidget {
-  const MensajesEmpresa({super.key, this.showBack = false});
+  const MensajesEmpresa({
+    super.key,
+    this.showBack = false,
+    this.embedded = false,
+  });
 
   final bool showBack;
+  final bool embedded;
 
   @override
   State<MensajesEmpresa> createState() => _MensajesEmpresaState();
@@ -40,7 +46,17 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
     super.dispose();
   }
 
-  void _open(Map<String, dynamic> hilo) => setState(() => _selected = hilo);
+  void _open(Map<String, dynamic> hilo) {
+    if (widget.embedded && MediaQuery.sizeOf(context).width < 960) {
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ChatEmpresaScreen(hilo: hilo),
+        ),
+      );
+      return;
+    }
+    setState(() => _selected = hilo);
+  }
 
   void _closeMobileThread() => setState(() => _selected = null);
 
@@ -71,7 +87,10 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
     // Se mide el ancho real del panel para que los dos paneles aparezcan tanto
     // dentro del shell como en una ruta independiente.
     final isWide = availableWidth >= 960;
-    final isCompact = availableWidth < 480;
+    final effectiveSelected = _selected ??
+        (isWide && conversaciones.isNotEmpty
+            ? Map<String, dynamic>.from(conversaciones.first as Map)
+            : null);
 
     final lista = contactoService.isBandejaLoading && bandeja.isEmpty
         ? ListView(
@@ -121,9 +140,8 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
                           conversaciones[index] as Map);
                       return _ThreadTile(
                         hilo: hilo,
-                        compact: isCompact,
                         selected: isWide &&
-                            _selected?['postulacion_id'] ==
+                            effectiveSelected?['postulacion_id'] ==
                                 hilo['postulacion_id'],
                         onTap: () => _open(hilo),
                       );
@@ -131,12 +149,7 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
                   );
 
     final search = Padding(
-      padding: EdgeInsets.fromLTRB(
-        isCompact ? 12 : 14,
-        isCompact ? 10 : 12,
-        isCompact ? 12 : 14,
-        10,
-      ),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
       child: TextField(
         key: const ValueKey('message-search-field'),
         controller: _searchController,
@@ -166,6 +179,17 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
         isWide ? 'desktop-message-list-content' : 'mobile-message-list-content',
       ),
       children: [
+        if (isWide)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 2),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                context.t('chat.title'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ),
         search,
         Divider(color: c.border, height: 1),
         Expanded(
@@ -194,7 +218,7 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              width: 360,
+              width: 300,
               child: KeyedSubtree(
                 key: const ValueKey('desktop-message-list-panel'),
                 child: listPanel,
@@ -202,15 +226,15 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
             ),
             VerticalDivider(width: 1, color: c.border),
             Expanded(
-              child: _selected == null
+              child: effectiveSelected == null
                   ? Container(
                       key: const ValueKey('messages-empty-selection'),
                       color: c.background,
                       child: const Center(child: BrandMark(size: 46)),
                     )
                   : ChatEmpresaView(
-                      key: ValueKey(_selected!['postulacion_id']),
-                      hilo: _selected!,
+                      key: ValueKey(effectiveSelected['postulacion_id']),
+                      hilo: effectiveSelected,
                     ),
             ),
           ],
@@ -240,20 +264,22 @@ class _MensajesEmpresaState extends State<MensajesEmpresa> {
 
     return Scaffold(
       key: const ValueKey('mobile-company-messages-list'),
-      appBar: AppBar(
-        toolbarHeight: 54,
-        centerTitle: true,
-        automaticallyImplyLeading: widget.showBack,
-        leading: widget.showBack
-            ? IconButton(
-                tooltip: context.t('common.back'),
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
-        title: const BrandMark(size: 32),
-      ),
-      body: SafeArea(top: false, child: listPanel),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              toolbarHeight: 52,
+              centerTitle: false,
+              automaticallyImplyLeading: widget.showBack,
+              leading: widget.showBack
+                  ? IconButton(
+                      tooltip: context.t('common.back'),
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.pop(context),
+                    )
+                  : null,
+              title: Text(context.t('chat.title')),
+            ),
+      body: SafeArea(top: !widget.embedded, child: listPanel),
     );
   }
 }
@@ -263,13 +289,11 @@ class _ThreadTile extends StatelessWidget {
     required this.hilo,
     required this.onTap,
     this.selected = false,
-    this.compact = false,
   });
 
   final Map<String, dynamic> hilo;
   final VoidCallback onTap;
   final bool selected;
-  final bool compact;
 
   String _hora(String? raw) {
     if (raw == null) return '';
@@ -298,22 +322,29 @@ class _ThreadTile extends StatelessWidget {
     final esMio = ultimo['remitente_rol']?.toString() == 'empresa';
 
     return Material(
-      color: selected ? c.surfaceAlt : Colors.transparent,
+      color: selected ? c.brand.withValues(alpha: 0.08) : Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 14 : 18,
-            vertical: compact ? 10 : 12,
+        child: Container(
+          key: selected ? const ValueKey('selected-message-thread') : null,
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                width: 3,
+                color: selected ? c.brand : Colors.transparent,
+              ),
+            ),
           ),
+          padding: const EdgeInsets.fromLTRB(13, 10, 14, 10),
           child: Row(
             children: [
               InitialsAvatar(
                 name: contraparte['nombre']?.toString() ?? '?',
-                size: compact ? 44 : 48,
+                size: 38,
                 imageUrl: contraparte['foto_url']?.toString(),
+                circular: true,
               ),
-              SizedBox(width: compact ? 10 : 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,7 +359,7 @@ class _ThreadTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              fontSize: 14.5,
+                              fontSize: 12.5,
                               color: c.ink,
                             ),
                           ),
@@ -336,7 +367,7 @@ class _ThreadTile extends StatelessWidget {
                         Text(
                           _hora(ultimo['fecha']?.toString()),
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             color: unread > 0 ? c.accent : c.inkFaint,
                             fontWeight:
                                 unread > 0 ? FontWeight.w600 : FontWeight.w400,
@@ -360,7 +391,7 @@ class _ThreadTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               color: unread > 0 ? c.ink : c.inkMuted,
                               fontWeight: unread > 0
                                   ? FontWeight.w500
@@ -439,6 +470,7 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
   final _scrollController = ScrollController();
   Timer? _pollTimer;
   bool _isSending = false;
+  bool _isSendingFeedback = false;
   bool _isPolling = false;
   late String _estadoActual;
 
@@ -454,7 +486,7 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
       if (_postulacionId.isEmpty) return;
       final service = context.read<ContactoService>();
       await service.fetchContactos(_postulacionId);
-      if (service.errorMessage == null) {
+      if (service.contactosErrorFor(_postulacionId) == null) {
         await service.marcarLeidos(_postulacionId);
       }
       _scrollToBottom(animated: false);
@@ -470,7 +502,7 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
       final before = service.contactosFor(_postulacionId).length;
       await service.fetchContactos(_postulacionId);
       if (!mounted) return;
-      if (service.errorMessage == null &&
+      if (service.contactosErrorFor(_postulacionId) == null &&
           service.contactosFor(_postulacionId).length != before) {
         await service.marcarLeidos(_postulacionId);
         _scrollToBottom();
@@ -532,6 +564,7 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
   }
 
   Future<void> _enviarFeedback(String tipo) async {
+    if (_isSendingFeedback) return;
     final auth = context.read<AuthService>();
     final service = context.read<ContactoService>();
     final contraparte = widget.hilo['contraparte'] is Map
@@ -540,74 +573,116 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
     final candidatoId = contraparte['cuenta_id']?.toString();
     if (candidatoId == null || auth.cuentaId == null) return;
 
-    String? mensaje;
-    String? motivo;
+    setState(() => _isSendingFeedback = true);
+    try {
+      String? mensaje;
+      String? motivo;
 
-    if (tipo == 'rechazo') {
-      final resultado = await showDialog<(String, String)>(
-        context: context,
-        builder: (_) => const _RechazoDialog(),
-      );
-      if (resultado == null) return;
-      mensaje = resultado.$1;
-      motivo = resultado.$2;
-    } else {
-      final controller = TextEditingController();
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(context.tr('chat.approve')),
-          content: TextField(
-            controller: controller,
-            minLines: 2,
-            maxLines: 4,
-            decoration: InputDecoration(hintText: context.tr('chat.reply')),
+      if (tipo == 'rechazo') {
+        final resultado = await showDialog<(String, String)>(
+          context: context,
+          builder: (_) => const _RechazoDialog(),
+        );
+        if (resultado == null) return;
+        mensaje = resultado.$1;
+        motivo = resultado.$2;
+      } else {
+        final controller = TextEditingController();
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(context.tr('chat.approve')),
+            content: TextField(
+              controller: controller,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(hintText: context.tr('chat.reply')),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(context.tr('common.cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(context.tr('common.send')),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(context.tr('common.cancel')),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(context.tr('common.send')),
-            ),
-          ],
-        ),
-      );
-      final texto = controller.text.trim();
-      controller.dispose();
-      if (ok != true) return;
-      mensaje = texto;
-      if (mensaje.isEmpty) return;
-    }
+        );
+        final texto = controller.text.trim();
+        controller.dispose();
+        if (ok != true) return;
+        mensaje = texto;
+        if (mensaje.isEmpty) return;
+      }
 
-    if (!mounted) return;
-    final success = await service.enviarFeedback(
-      postulacionId: _postulacionId,
-      empresaId: auth.cuentaId!,
-      cuentaId: candidatoId,
-      tipoFeedback: tipo,
-      mensajeTexto: mensaje,
-      motivoRechazo: motivo,
-    );
-    if (!mounted) return;
-    if (success) {
-      setState(() {
-        _estadoActual = tipo == 'aprobacion' ? 'aceptado' : 'rechazado';
-      });
-      _scrollToBottom();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('chat.sent'))),
+      if (!mounted) return;
+      final success = await service.enviarFeedback(
+        postulacionId: _postulacionId,
+        empresaId: auth.cuentaId!,
+        cuentaId: candidatoId,
+        tipoFeedback: tipo,
+        mensajeTexto: mensaje,
+        motivoRechazo: motivo,
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(service.errorMessage ?? 'Error'),
-          backgroundColor: context.colors.danger,
-        ),
-      );
+      if (!mounted) return;
+      if (success) {
+        setState(() {
+          _estadoActual = tipo == 'aprobacion' ? 'aceptado' : 'rechazado';
+        });
+        _scrollToBottom();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('chat.sent'))),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(service.errorMessage ?? 'Error'),
+            backgroundColor: context.colors.danger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingFeedback = false);
     }
+  }
+
+  void _openProfile(Map<String, dynamic> contraparte) {
+    final cuentaId = contraparte['cuenta_id']?.toString();
+    if (cuentaId == null || cuentaId.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CandidatoPerfilPage(
+          cuentaId: cuentaId,
+          onContact: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  }
+
+  DateTime? _messageDate(dynamic rawMessage) {
+    if (rawMessage is! Map) return null;
+    return DateTime.tryParse(rawMessage['fecha_hora']?.toString() ?? '')
+        ?.toLocal();
+  }
+
+  bool _sameDay(DateTime? first, DateTime? second) =>
+      first != null &&
+      second != null &&
+      first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day;
+
+  String _dateLabel(BuildContext context, DateTime? date) {
+    if (date == null) return '';
+    final now = DateTime.now();
+    if (_sameDay(date, now)) return context.t('time.today');
+    if (_sameDay(date, now.subtract(const Duration(days: 1)))) {
+      return context.t('time.yesterday');
+    }
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   @override
@@ -615,6 +690,7 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
     final c = context.colors;
     final service = context.watch<ContactoService>();
     final mensajes = service.contactosFor(_postulacionId);
+    final threadError = service.contactosErrorFor(_postulacionId);
     final contraparte = widget.hilo['contraparte'] is Map
         ? Map<String, dynamic>.from(widget.hilo['contraparte'] as Map)
         : const <String, dynamic>{};
@@ -623,192 +699,328 @@ class _ChatEmpresaViewState extends State<ChatEmpresaView> {
       color: c.background,
       child: Column(
         children: [
-          Container(
-            height: 56,
-            padding: EdgeInsets.only(
-              left: widget.showBack ? 4 : 16,
-              right: 4,
-            ),
-            decoration: BoxDecoration(
-              color: c.surface,
-              border: Border(bottom: BorderSide(color: c.border)),
-            ),
-            child: Row(
-              children: [
-                if (widget.showBack)
-                  IconButton(
-                    tooltip: context.t('common.back'),
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: widget.onBack ?? () => Navigator.pop(context),
-                  ),
-                InitialsAvatar(
-                  name: contraparte['nombre']?.toString() ?? '?',
-                  size: 36,
-                  imageUrl: contraparte['foto_url']?.toString(),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        contraparte['nombre']?.toString() ??
-                            context.t('common.applicant'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                          color: c.ink,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 430;
+              final showDesktopActions = constraints.maxWidth >= 640;
+              final isFinal =
+                  _estadoActual == 'aceptado' || _estadoActual == 'rechazado';
+              return Column(
+                children: [
+                  Container(
+                    key: const ValueKey('company-chat-header'),
+                    height: 52,
+                    padding: EdgeInsets.only(
+                      left: widget.showBack ? 4 : 14,
+                      right: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.surface,
+                      border: Border(bottom: BorderSide(color: c.border)),
+                    ),
+                    child: Row(
+                      children: [
+                        if (widget.showBack)
+                          IconButton(
+                            tooltip: context.t('common.back'),
+                            icon: const Icon(Icons.arrow_back),
+                            onPressed:
+                                widget.onBack ?? () => Navigator.pop(context),
+                          ),
+                        InitialsAvatar(
+                          name: contraparte['nombre']?.toString() ?? '?',
+                          size: 32,
+                          imageUrl: contraparte['foto_url']?.toString(),
+                          circular: true,
                         ),
-                      ),
-                      Text(
-                        widget.hilo['puesto_titulo']?.toString() ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11.5, color: c.inkFaint),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_estadoActual != 'aceptado' && _estadoActual != 'rechazado')
-                  PopupMenuButton<String>(
-                    tooltip: context.t('chat.actions'),
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: _enviarFeedback,
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'aprobacion',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.thumb_up_alt_outlined,
-                              size: 19,
-                              color: c.success,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(context.tr('chat.approve')),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'rechazo',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.cancel_outlined,
-                              size: 19,
-                              color: c.danger,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(context.tr('chat.reject')),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child:
-                service.isLoadingContactos(_postulacionId) && mensajes.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : service.errorMessage != null && mensajes.isEmpty
-                        ? ListView(
-                            padding: const EdgeInsets.all(18),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ErrorBanner(
-                                message: context.t('chat.messages.error'),
-                                actionLabel: context.t('common.retry'),
-                                onAction: () => context
-                                    .read<ContactoService>()
-                                    .fetchContactos(_postulacionId),
+                              Text(
+                                contraparte['nombre']?.toString() ??
+                                    context.t('common.applicant'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: c.ink,
+                                ),
+                              ),
+                              Text(
+                                widget.hilo['puesto_titulo']?.toString() ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style:
+                                    TextStyle(fontSize: 12, color: c.inkFaint),
                               ),
                             ],
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-                            itemCount: mensajes.length,
-                            itemBuilder: (context, index) => _ChatBubble(
-                              contacto: mensajes[index] is Map
-                                  ? Map<String, dynamic>.from(
-                                      mensajes[index] as Map,
-                                    )
-                                  : const <String, dynamic>{},
+                          ),
+                        ),
+                        if (!compact)
+                          StatusChip(label: _estadoActual, compact: true),
+                        if (showDesktopActions) ...[
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: contraparte['cuenta_id'] == null
+                                ? null
+                                : () => _openProfile(contraparte),
+                            icon: const Icon(Icons.person_outline, size: 16),
+                            label: Text(context.t('cand.view_profile')),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 34),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
                             ),
                           ),
-          ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-            decoration: BoxDecoration(
-              color: c.surface,
-              border: Border(top: BorderSide(color: c.border)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _send(),
-                    decoration: InputDecoration(
-                      hintText: context.t('chat.reply'),
-                      fillColor: c.surfaceAlt,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(22),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(22),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(22),
-                        borderSide: BorderSide(color: c.brand),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Material(
-                  color: c.brand,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _isSending ? null : _send,
-                    child: Padding(
-                      padding: const EdgeInsets.all(11),
-                      child: _isSending
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                        ] else
+                          PopupMenuButton<String>(
+                            tooltip: context.t('chat.actions'),
+                            onSelected: (value) {
+                              if (value == 'perfil') {
+                                _openProfile(contraparte);
+                              } else {
+                                _enviarFeedback(value);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'perfil',
+                                child: Text(context.t('cand.view_profile')),
                               ),
-                            )
-                          : const Icon(
-                              Icons.send_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                              if (!isFinal)
+                                PopupMenuItem(
+                                  value: 'aprobacion',
+                                  enabled: !_isSendingFeedback,
+                                  child: Text(context.t('chat.approve')),
+                                ),
+                              if (!isFinal)
+                                PopupMenuItem(
+                                  value: 'rechazo',
+                                  enabled: !_isSendingFeedback,
+                                  child: Text(context.t('chat.reject')),
+                                ),
+                            ],
+                          ),
+                      ],
                     ),
                   ),
+                  if (showDesktopActions && !isFinal)
+                    Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        border: Border(bottom: BorderSide(color: c.border)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              context.t('chat.actions').toUpperCase(),
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _isSendingFeedback
+                                ? null
+                                : () => _enviarFeedback('aprobacion'),
+                            icon: Icon(
+                              Icons.check_circle_outline,
+                              size: 16,
+                              color: c.success,
+                            ),
+                            label: Text(context.t('chat.approve')),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: c.success,
+                              minimumSize: const Size(0, 33),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: _isSendingFeedback
+                                ? null
+                                : () => _enviarFeedback('rechazo'),
+                            icon: const Icon(Icons.close, size: 16),
+                            label: Text(context.t('chat.reject')),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: c.danger,
+                              minimumSize: const Size(0, 33),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                if (threadError != null && mensajes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                    child: ErrorBanner(
+                      message: context.t('chat.messages.error'),
+                      actionLabel: context.t('common.retry'),
+                      onAction: () => context
+                          .read<ContactoService>()
+                          .fetchContactos(_postulacionId),
+                    ),
+                  ),
+                Expanded(
+                  child: service.isLoadingContactos(_postulacionId) &&
+                          mensajes.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : threadError != null && mensajes.isEmpty
+                          ? ListView(
+                              padding: const EdgeInsets.all(18),
+                              children: [
+                                ErrorBanner(
+                                  message: context.t('chat.messages.error'),
+                                  actionLabel: context.t('common.retry'),
+                                  onAction: () => context
+                                      .read<ContactoService>()
+                                      .fetchContactos(_postulacionId),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                              itemCount: mensajes.length,
+                              itemBuilder: (context, index) {
+                                final current = mensajes[index] is Map
+                                    ? Map<String, dynamic>.from(
+                                        mensajes[index] as Map,
+                                      )
+                                    : const <String, dynamic>{};
+                                final date = _messageDate(current);
+                                final previous = index == 0
+                                    ? null
+                                    : _messageDate(mensajes[index - 1]);
+                                return Column(
+                                  children: [
+                                    if (index == 0 || !_sameDay(date, previous))
+                                      _DateDivider(
+                                        label: _dateLabel(context, date),
+                                      ),
+                                    _ChatBubble(contacto: current),
+                                  ],
+                                );
+                              },
+                            ),
                 ),
               ],
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: EdgeInsets.fromLTRB(
+                MediaQuery.sizeOf(context).width < 430 ? 10 : 12,
+                8,
+                MediaQuery.sizeOf(context).width < 430 ? 10 : 12,
+                10,
+              ),
+              decoration: BoxDecoration(
+                color: c.surface,
+                border: Border(top: BorderSide(color: c.border)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      minLines: 1,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _send(),
+                      decoration: InputDecoration(
+                        hintText: context.t('chat.reply'),
+                        fillColor: c.surfaceAlt,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22),
+                          borderSide: BorderSide(color: c.brand),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Material(
+                    color: c.brand,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _isSending ? null : _send,
+                      child: Padding(
+                        padding: const EdgeInsets.all(11),
+                        child: _isSending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.send_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DateDivider extends StatelessWidget {
+  const _DateDivider({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    if (label.isEmpty) return const SizedBox(height: 4);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          border: Border.all(color: context.colors.border),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(color: context.colors.inkFaint, fontSize: 12),
+        ),
       ),
     );
   }
@@ -838,23 +1050,24 @@ class _ChatBubble extends StatelessWidget {
     final motivo = feedback['motivo_rechazo']?.toString();
     final isMine = contacto['remitente_rol']?.toString() == 'empresa';
     final esEvento = tipo == 'aprobacion' || tipo == 'rechazo';
+    final compact = MediaQuery.sizeOf(context).width < 430;
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
+        key: ValueKey(
+          'chat-bubble-${contacto['contacto_id'] ?? contacto['fecha_hora'] ?? mensaje.hashCode}',
+        ),
         constraints: const BoxConstraints(maxWidth: 440),
         margin: EdgeInsets.only(
           bottom: 6,
-          left: isMine ? 56 : 0,
-          right: isMine ? 0 : 56,
+          left: isMine ? (compact ? 34 : 56) : 0,
+          right: isMine ? 0 : (compact ? 34 : 56),
         ),
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
         decoration: BoxDecoration(
-          color: isMine
-              ? (context.isDark
-                  ? const Color(0xFF31405F)
-                  : const Color(0xFFDCE5FA))
-              : c.surface,
+          color: isMine ? c.brand : c.surface,
+          border: isMine ? null : Border.all(color: c.border),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(14),
             topRight: const Radius.circular(14),
@@ -876,7 +1089,11 @@ class _ChatBubble extends StatelessWidget {
               ),
             Text(
               mensaje,
-              style: TextStyle(color: c.ink, fontSize: 14, height: 1.4),
+              style: TextStyle(
+                color: isMine ? Colors.white : c.ink,
+                fontSize: 13,
+                height: 1.4,
+              ),
             ),
             if (motivo != null && motivo.isNotEmpty)
               Padding(
@@ -884,7 +1101,9 @@ class _ChatBubble extends StatelessWidget {
                 child: Text(
                   '${context.t('chat.reason')}: $motivo',
                   style: TextStyle(
-                    color: c.inkMuted,
+                    color: isMine
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : c.inkMuted,
                     fontStyle: FontStyle.italic,
                     fontSize: 12.5,
                   ),
@@ -895,7 +1114,12 @@ class _ChatBubble extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 _hora(contacto['fecha_hora']?.toString()),
-                style: TextStyle(fontSize: 10.5, color: c.inkFaint),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isMine
+                      ? Colors.white.withValues(alpha: 0.72)
+                      : c.inkFaint,
+                ),
               ),
             ),
           ],

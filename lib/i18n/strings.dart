@@ -19,10 +19,18 @@ const Map<String, String> stringsEs = {
   'common.error.connection':
       'No se pudo conectar con el servidor. Verifica tu conexión.',
   'common.error.generic': 'Ocurrió un error. Intenta nuevamente.',
+  'boot.error.title': 'No pudimos conectar con LookUp',
+  'boot.error.timeout':
+      'El servidor tardó demasiado en responder. Inténtalo nuevamente.',
+  'boot.error.connection':
+      'Revisa que el backend esté disponible e inténtalo nuevamente.',
   'common.session.missing': 'No se encontró una sesión de empresa activa.',
   'common.not_specified': 'No especificado',
   'common.not_specified_f': 'No especificada',
+  'common.location.unspecified': 'Ubicación no especificada',
   'common.applicant': 'Postulante',
+  'common.company': 'Empresa',
+  'common.untitled': 'Sin título',
 
   // Navegación
   'nav.home': 'Inicio',
@@ -31,14 +39,16 @@ const Map<String, String> stringsEs = {
   'nav.profile': 'Perfil',
   'nav.my_profile': 'Perfil de empresa',
   'nav.logout': 'Cerrar sesión',
+  'logout.confirm': '¿Quieres cerrar tu sesión de LookUp Empresas?',
+  'nav.company': 'Empresas',
 
   // Auth
-  'auth.login.title': 'Bienvenido a LookUp',
+  'auth.login.title': 'Inicia sesión',
   'auth.login.subtitle':
       'Inicia sesión para gestionar tus vacantes y postulantes.',
   'auth.email': 'Correo electrónico',
   'auth.password': 'Contraseña',
-  'auth.login': 'Iniciar Sesión',
+  'auth.login': 'Iniciar sesión',
   'auth.no_account': '¿No tienes una cuenta de empresa?',
   'auth.applicant.prompt': '¿Eres postulante?',
   'auth.applicant.link': 'Ir al portal de postulantes',
@@ -63,6 +73,13 @@ const Map<String, String> stringsEs = {
   'auth.password.mismatch': 'Las contraseñas no coinciden',
   'auth.wrong_app':
       'Esta cuenta no es de empresa. Usa la app LookUp para postulantes.',
+  'auth.company_brand': 'LookUp Empresas',
+  'auth.company.hero': 'El talento adecuado,\nsin vueltas.',
+  'auth.company.benefit.1': 'Publica tu vacante clara en minutos',
+  'auth.company.benefit.2': 'Gestiona postulantes por etapas del proceso',
+  'auth.company.benefit.3': 'Contrata conversando directo con los postulantes',
+  'auth.company.footer': 'Postulantes verificados en todo el Perú',
+  'auth.email.example.company': 'rrhh@empresa.pe',
 
   // Recuperar contraseña
   'reset.title': 'Recuperar contraseña',
@@ -77,6 +94,9 @@ const Map<String, String> stringsEs = {
   'reset.success': 'Contraseña restablecida. Ya puedes iniciar sesión.',
   'reset.step2.hint': 'Revisa tu correo e ingresa el código recibido.',
   'reset.change_email': 'Usar otro correo',
+  'reset.step2.title': 'Revisa tu correo',
+  'reset.question': '¿Olvidaste tu contraseña?',
+  'reset.back_login': 'Volver a iniciar sesión',
 
   // Inicio
   'home.greeting': 'Hola,',
@@ -84,7 +104,9 @@ const Map<String, String> stringsEs = {
   'home.open': 'Vacantes abiertas',
   'home.closed': 'Vacantes cerradas',
   'home.total': 'Total publicadas',
+  'home.active_candidates': 'Postulantes en curso',
   'home.recent': 'Vacantes recientes',
+  'home.news': 'Notificaciones',
   'home.see_all': 'Ver todas',
   'home.go_to_vacancies': 'Ir a Vacantes',
   'home.publish': 'Publicar vacante',
@@ -94,6 +116,7 @@ const Map<String, String> stringsEs = {
 
   // Vacantes
   'jobs.search': 'Buscar por título o ciudad',
+  'jobs.title': 'Vacantes',
   'jobs.all': 'Todas',
   'jobs.filter': 'Filtrar vacantes',
   'jobs.open': 'Abiertas',
@@ -104,6 +127,7 @@ const Map<String, String> stringsEs = {
   'jobs.count': 'vacantes',
   'jobs.count.one': 'vacante',
   'jobs.published': 'Publicada el',
+  'jobs.published.short': 'Publicada',
   'jobs.edit': 'Editar vacante',
   'jobs.close': 'Cerrar vacante',
   'jobs.reopen': 'Reabrir vacante',
@@ -114,10 +138,19 @@ const Map<String, String> stringsEs = {
   'jobs.closed.ok': 'Vacante cerrada correctamente.',
   'jobs.reopened.ok': 'Vacante reabierta correctamente.',
   'jobs.detail': 'Detalle',
+  'jobs.detail.load.error': 'No se pudo actualizar el detalle de la vacante.',
   'jobs.candidates': 'Postulantes',
   'jobs.description': 'Descripción de la vacante',
   'jobs.requirements': 'Requisitos',
   'jobs.desirable': 'Deseable',
+  'jobs.summary': 'Resumen',
+  'jobs.monthly_salary': 'Salario mensual',
+  'jobs.open.one': 'Abierta',
+  'jobs.closed.one': 'Cerrada',
+  'jobs.close.helper':
+      'Al cerrarla, los postulantes dejan de verla. Puedes reabrirla cuando quieras.',
+  'jobs.reopen.helper':
+      'Al reabrirla, volverá a ser visible y aceptará nuevas postulaciones.',
   'jobs.new.title': 'Nueva vacante',
   'jobs.new.subtitle':
       'Publica una vacante clara y completa para atraer a los postulantes adecuados.',
@@ -152,6 +185,7 @@ const Map<String, String> stringsEs = {
   'form.requirements.hint': 'Agrega los requisitos que verán los postulantes.',
   'form.requirement.example': 'Ej. 2 años de experiencia con Flutter',
   'form.requirement.mandatory': 'Requisito obligatorio',
+  'form.requirement.required': 'Obligatorio',
 
   // Postulantes
   'cand.title': 'Postulantes',
@@ -223,6 +257,7 @@ const Map<String, String> stringsEs = {
 
   // Configuración
   'settings.title': 'Configuración',
+  'settings.preferences': 'Preferencias',
   'settings.theme': 'Tema de la aplicación',
   'settings.theme.light': 'Claro',
   'settings.theme.dark': 'Oscuro',
@@ -234,6 +269,8 @@ const Map<String, String> stringsEs = {
   'settings.password.new': 'Nueva contraseña',
   'settings.password.confirm': 'Confirmar nueva contraseña',
   'settings.password.updated': 'Contraseña actualizada correctamente.',
+  'settings.password.updated.login':
+      'Contraseña actualizada. Inicia sesión nuevamente.',
   'settings.password.error':
       'No se pudo actualizar la contraseña. Verifica tu contraseña actual.',
 
@@ -271,6 +308,8 @@ const Map<String, String> stringsEs = {
   'notif.empty.msg': 'Aquí verás las nuevas postulaciones de los últimos días.',
   'notif.load.error': 'No se pudieron cargar las notificaciones.',
   'notif.applied': 'postuló a',
+  'notif.mark_read': 'Marcar leídas',
+  'time.today': 'Hoy',
   'time.now': 'ahora',
   'time.minutes_ago': 'hace {count} min',
   'time.hours_ago': 'hace {count} h',
@@ -295,21 +334,30 @@ const Map<String, String> stringsEn = {
   'common.error.connection':
       'Could not reach the server. Check your connection.',
   'common.error.generic': 'Something went wrong. Try again.',
+  'boot.error.title': 'We could not connect to LookUp',
+  'boot.error.timeout':
+      'The server took too long to respond. Please try again.',
+  'boot.error.connection': 'Check that the backend is available and try again.',
   'common.session.missing': 'No active company session was found.',
   'common.not_specified': 'Not specified',
   'common.not_specified_f': 'Not specified',
+  'common.location.unspecified': 'Location not specified',
   'common.applicant': 'Applicant',
+  'common.company': 'Company',
+  'common.untitled': 'Untitled',
   'nav.home': 'Home',
   'nav.vacancies': 'Vacancies',
   'nav.messages': 'Messages',
   'nav.profile': 'Profile',
   'nav.my_profile': 'Company profile',
   'nav.logout': 'Sign out',
-  'auth.login.title': 'Welcome to LookUp',
+  'logout.confirm': 'Do you want to sign out of LookUp Companies?',
+  'nav.company': 'Companies',
+  'auth.login.title': 'Sign in',
   'auth.login.subtitle': 'Sign in to manage your vacancies and applicants.',
   'auth.email': 'Email address',
   'auth.password': 'Password',
-  'auth.login': 'Sign In',
+  'auth.login': 'Sign in',
   'auth.no_account': "Don't have a company account?",
   'auth.applicant.prompt': 'Are you an applicant?',
   'auth.applicant.link': 'Go to the applicant portal',
@@ -334,6 +382,13 @@ const Map<String, String> stringsEn = {
   'auth.password.mismatch': 'Passwords do not match',
   'auth.wrong_app':
       'This is not a company account. Use the LookUp app for applicants.',
+  'auth.company_brand': 'LookUp Companies',
+  'auth.company.hero': 'The right talent,\nwithout the hassle.',
+  'auth.company.benefit.1': 'Publish a clear vacancy in minutes',
+  'auth.company.benefit.2': 'Manage applicants through each process stage',
+  'auth.company.benefit.3': 'Hire by talking directly with applicants',
+  'auth.company.footer': 'Verified applicants across Peru',
+  'auth.email.example.company': 'hr@company.com',
   'reset.title': 'Reset password',
   'reset.subtitle':
       'Enter your account email and we will send you a code to reset your password.',
@@ -346,12 +401,17 @@ const Map<String, String> stringsEn = {
   'reset.success': 'Password reset. You can now sign in.',
   'reset.step2.hint': 'Check your email and enter the received code.',
   'reset.change_email': 'Use another email',
+  'reset.step2.title': 'Check your email',
+  'reset.question': 'Forgot your password?',
+  'reset.back_login': 'Back to sign in',
   'home.greeting': 'Hi,',
   'home.subtitle': 'This is the state of your hiring processes today.',
   'home.open': 'Open vacancies',
   'home.closed': 'Closed vacancies',
   'home.total': 'Total posted',
+  'home.active_candidates': 'Active applicants',
   'home.recent': 'Recent vacancies',
+  'home.news': 'Notifications',
   'home.see_all': 'See all',
   'home.go_to_vacancies': 'Go to vacancies',
   'home.publish': 'Post vacancy',
@@ -359,6 +419,7 @@ const Map<String, String> stringsEn = {
   'home.empty.msg':
       'Create your first vacancy to start receiving applications.',
   'jobs.search': 'Search by title or city',
+  'jobs.title': 'Vacancies',
   'jobs.all': 'All',
   'jobs.filter': 'Filter vacancies',
   'jobs.open': 'Open',
@@ -369,6 +430,7 @@ const Map<String, String> stringsEn = {
   'jobs.count': 'vacancies',
   'jobs.count.one': 'vacancy',
   'jobs.published': 'Published on',
+  'jobs.published.short': 'Published',
   'jobs.edit': 'Edit vacancy',
   'jobs.close': 'Close vacancy',
   'jobs.reopen': 'Reopen vacancy',
@@ -379,10 +441,19 @@ const Map<String, String> stringsEn = {
   'jobs.closed.ok': 'Vacancy closed successfully.',
   'jobs.reopened.ok': 'Vacancy reopened successfully.',
   'jobs.detail': 'Details',
+  'jobs.detail.load.error': 'The vacancy details could not be refreshed.',
   'jobs.candidates': 'Applicants',
   'jobs.description': 'Vacancy description',
   'jobs.requirements': 'Requirements',
   'jobs.desirable': 'Nice to have',
+  'jobs.summary': 'Summary',
+  'jobs.monthly_salary': 'Monthly salary',
+  'jobs.open.one': 'Open',
+  'jobs.closed.one': 'Closed',
+  'jobs.close.helper':
+      'Once closed, applicants will no longer see it. You can reopen it anytime.',
+  'jobs.reopen.helper':
+      'Once reopened, it will be visible and accept new applications.',
   'jobs.new.title': 'New vacancy',
   'jobs.new.subtitle':
       'Post a clear, complete vacancy to attract the right applicants.',
@@ -415,6 +486,7 @@ const Map<String, String> stringsEn = {
   'form.requirements.hint': 'Add the requirements applicants will see.',
   'form.requirement.example': 'E.g. 2 years of Flutter experience',
   'form.requirement.mandatory': 'Mandatory requirement',
+  'form.requirement.required': 'Required',
   'cand.title': 'Applicants',
   'cand.all': 'All',
   'cand.empty.title': 'No applicants yet',
@@ -476,6 +548,7 @@ const Map<String, String> stringsEn = {
   'profile.load.error': 'The company profile could not be loaded.',
   'profile.update.error': 'Changes could not be saved.',
   'settings.title': 'Settings',
+  'settings.preferences': 'Preferences',
   'settings.theme': 'App theme',
   'settings.theme.light': 'Light',
   'settings.theme.dark': 'Dark',
@@ -487,6 +560,7 @@ const Map<String, String> stringsEn = {
   'settings.password.new': 'New password',
   'settings.password.confirm': 'Confirm new password',
   'settings.password.updated': 'Password updated successfully.',
+  'settings.password.updated.login': 'Password updated. Please sign in again.',
   'settings.password.error':
       'The password could not be updated. Check your current password.',
   'photo.title': 'Company logo',
@@ -517,6 +591,8 @@ const Map<String, String> stringsEn = {
   'notif.empty.msg': "Here you'll see new applications from recent days.",
   'notif.load.error': 'Notifications could not be loaded.',
   'notif.applied': 'applied to',
+  'notif.mark_read': 'Mark as read',
+  'time.today': 'Today',
   'time.now': 'now',
   'time.minutes_ago': '{count} min ago',
   'time.hours_ago': '{count} h ago',

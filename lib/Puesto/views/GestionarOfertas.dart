@@ -100,27 +100,46 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
           : null,
       body: RefreshIndicator(
         onRefresh: _refresh,
-        child: PageContainer(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              compact ? 16 : 22,
-              18,
-              compact ? 16 : 22,
-              compact ? 104 : 32,
-            ),
+        child: ViewportScrollPage(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            compact ? 18 : 28,
+            24,
+            compact ? 18 : 28,
+            compact ? 104 : 32,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!compact) ...[
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton.icon(
-                    key: const ValueKey('publish-vacancy-button'),
-                    onPressed: _crearVacante,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(context.t('home.publish')),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.t('jobs.title'),
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${puestoService.puestosEmpresa.length} ${puestoService.puestosEmpresa.length == 1 ? context.t('jobs.count.one') : context.t('jobs.count')} ${context.t('jobs.published.short')}',
+                          style: TextStyle(color: c.inkMuted, fontSize: 12.5),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
-              ],
+                  if (!compact)
+                    FilledButton.icon(
+                      key: const ValueKey('publish-vacancy-button'),
+                      onPressed: _crearVacante,
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(context.t('home.publish')),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth >= 620;
@@ -206,7 +225,7 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               if (puestoService.errorMessage != null &&
                   puestoService.puestosEmpresa.isNotEmpty) ...[
                 ErrorBanner(
@@ -241,11 +260,6 @@ class _GestionarOfertasState extends State<GestionarOfertas> {
                       : context.t('jobs.filtered.msg'),
                 )
               else ...[
-                Text(
-                  '${puestos.length} ${puestos.length == 1 ? context.t('jobs.count.one') : context.t('jobs.count')}',
-                  style: TextStyle(color: c.inkFaint, fontSize: 13),
-                ),
-                const SizedBox(height: 8),
                 ...puestos.map(
                   (puesto) => _VacancyRow(
                     puesto: puesto,
@@ -304,64 +318,96 @@ class _VacancyRow extends StatelessWidget {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  int get _postulantes {
+    final value = puesto['postulantes_total'];
+    return value is num ? value.toInt() : int.tryParse('$value') ?? 0;
+  }
+
+  String _salario(BuildContext context) {
+    final min = puesto['salario_min'];
+    final max = puesto['salario_max'];
+    final currency = puesto['moneda']?.toString() ?? 'PEN';
+    String format(dynamic value) {
+      final number = value is num ? value : num.tryParse('$value');
+      if (number == null) return '';
+      return number == number.roundToDouble()
+          ? number.toInt().toString()
+          : number.toStringAsFixed(2);
+    }
+
+    if (min == null && max == null) return context.t('salario.na');
+    if (min != null && max != null) {
+      return '$currency ${format(min)} - ${format(max)}';
+    }
+    return '$currency ${format(min ?? max)}';
+  }
+
+  String _contract(BuildContext context) {
+    final raw = puesto['tipo_contrato']?.toString() ?? '';
+    final key = 'contrato.$raw';
+    final translated = context.tr(key);
+    return translated == key ? raw.replaceAll('_', ' ') : translated;
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final titulo = puesto['titulo']?.toString() ?? 'Sin título';
+    final titulo = puesto['titulo']?.toString() ?? context.t('common.untitled');
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 620;
-        final summary = Row(
+        final isWide = constraints.maxWidth >= 680;
+        final identity = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            InitialsAvatar(
-              name: titulo,
-              size: 42,
-              fallbackIcon: Icons.work_outline,
-            ),
-            const SizedBox(width: 12),
+            InitialsAvatar(name: titulo, size: 38),
+            const SizedBox(width: 11),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    titulo,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: c.ink,
-                      fontSize: 14.5,
-                    ),
+                  Wrap(
+                    spacing: 7,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        titulo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: c.ink,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      StatusChip(
+                        label: puesto['estado']?.toString() ?? 'abierto',
+                        compact: true,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
                     [
-                      puesto['ubicacion']?.toString() ?? 'Sin ubicación',
+                      puesto['ubicacion']?.toString() ??
+                          context.t('common.location.unspecified'),
+                      _contract(context),
+                      _salario(context),
                       if (_fecha(context).isNotEmpty)
                         '${context.t('jobs.published')} ${_fecha(context)}',
-                    ].join(' · '),
-                    maxLines: 1,
+                    ].where((value) => value.isNotEmpty).join(' · '),
+                    maxLines: isWide ? 1 : 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: c.inkMuted, fontSize: 12.5),
+                    style: TextStyle(
+                      color: c.inkMuted,
+                      fontSize: 12,
+                      height: 1.35,
+                    ),
                   ),
                 ],
               ),
             ),
-            if (isWide) ...[
-              const SizedBox(width: 10),
-              StatusChip(
-                label: puesto['estado']?.toString() ?? 'abierto',
-                compact: true,
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: context.t('jobs.edit'),
-                onPressed: onEdit,
-                icon: Icon(Icons.edit_outlined, size: 20, color: c.inkMuted),
-              ),
-            ],
-            Icon(Icons.chevron_right, size: 20, color: c.inkFaint),
           ],
         );
 
@@ -371,31 +417,81 @@ class _VacancyRow extends StatelessWidget {
           child: InkWell(
             onTap: onOpen,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: c.border)),
               ),
               child: isWide
-                  ? summary
+                  ? Row(
+                      children: [
+                        Expanded(child: identity),
+                        const SizedBox(width: 16),
+                        SizedBox(
+                          width: 72,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '$_postulantes',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: c.ink),
+                              ),
+                              Text(
+                                context.t(
+                                  _postulantes == 1
+                                      ? 'cand.count.one'
+                                      : 'cand.count',
+                                ),
+                                style:
+                                    TextStyle(color: c.inkFaint, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: context.t('jobs.edit'),
+                          onPressed: onEdit,
+                          icon: Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: c.inkMuted,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 19,
+                          color: c.inkFaint,
+                        ),
+                      ],
+                    )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        summary,
-                        const SizedBox(height: 8),
+                        identity,
+                        const SizedBox(height: 7),
                         Padding(
-                          padding: const EdgeInsets.only(left: 54, right: 4),
+                          padding: const EdgeInsets.only(left: 49),
                           child: Row(
                             children: [
-                              StatusChip(
-                                label:
-                                    puesto['estado']?.toString() ?? 'abierto',
-                                compact: true,
+                              Expanded(
+                                child: Text(
+                                  '$_postulantes ${context.t(_postulantes == 1 ? 'cand.count.one' : 'cand.count')}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: c.inkFaint,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
-                              const Spacer(),
-                              TextButton.icon(
+                              const SizedBox(width: 8),
+                              IconButton.outlined(
+                                tooltip: context.t('jobs.edit'),
                                 onPressed: onEdit,
+                                visualDensity: VisualDensity.compact,
                                 icon: const Icon(Icons.edit_outlined, size: 17),
-                                label: Text(context.t('jobs.edit')),
                               ),
                             ],
                           ),

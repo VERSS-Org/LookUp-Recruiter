@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lookup_flutter/services/auth_service.dart';
@@ -100,46 +102,131 @@ class _MyAppState extends State<MyApp> {
 
 /// Restaura la sesion guardada y decide entre login y el shell de empresa.
 class SessionGate extends StatefulWidget {
-  const SessionGate({super.key});
+  const SessionGate({
+    super.key,
+    this.bootTimeout = const Duration(seconds: 20),
+  });
+
+  final Duration bootTimeout;
 
   @override
   State<SessionGate> createState() => _SessionGateState();
 }
 
 class _SessionGateState extends State<SessionGate> {
-  late final Future<bool> _sessionFuture;
+  _BootState _bootState = _BootState.loading;
+  String? _bootErrorKey;
+  int _bootAttempt = 0;
 
   @override
   void initState() {
     super.initState();
-    _sessionFuture = _restoreSession();
+    _boot();
   }
 
-  Future<bool> _restoreSession() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final restored = await authService.tryAutoLogin();
-    if (!restored) return false;
-    if (authService.role != 'empresa') {
-      // Esta app es solo para cuentas de empresa.
-      await authService.logout();
-      return false;
+  Future<void> _boot() async {
+    final attempt = ++_bootAttempt;
+    if (_bootState != _BootState.loading && mounted) {
+      setState(() {
+        _bootState = _BootState.loading;
+        _bootErrorKey = null;
+      });
     }
-    return true;
+
+    final authService = context.read<AuthService>();
+    try {
+      final restored =
+          await authService.tryAutoLogin().timeout(widget.bootTimeout);
+      if (restored && authService.role != 'empresa') {
+        await authService.logout();
+      }
+      if (!mounted || attempt != _bootAttempt) return;
+      setState(() => _bootState = _BootState.ready);
+    } on TimeoutException {
+      _showBootError(attempt, 'boot.error.timeout');
+    } catch (_) {
+      _showBootError(attempt, 'boot.error.connection');
+    }
+  }
+
+  void _showBootError(int attempt, String messageKey) {
+    if (!mounted || attempt != _bootAttempt) return;
+    setState(() {
+      _bootState = _BootState.failed;
+      _bootErrorKey = messageKey;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    switch (_bootState) {
+      case _BootState.loading:
+        return const SplashScreen();
+      case _BootState.failed:
+        return _BootErrorScreen(
+          messageKey: _bootErrorKey ?? 'boot.error.connection',
+          onRetry: _boot,
+        );
+      case _BootState.ready:
+        break;
+    }
+
     final isAuthenticated = context.watch<AuthService>().isAuthenticated;
-    return FutureBuilder<bool>(
-      future: _sessionFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SplashScreen();
-        }
-        return snapshot.data == true && isAuthenticated
-            ? const BarraNavegacion()
-            : const Login();
-      },
+    return isAuthenticated && context.read<AuthService>().role == 'empresa'
+        ? const BarraNavegacion()
+        : const Login();
+  }
+}
+
+enum _BootState { loading, ready, failed }
+
+class _BootErrorScreen extends StatelessWidget {
+  const _BootErrorScreen({required this.messageKey, required this.onRetry});
+
+  final String messageKey;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Scaffold(
+      backgroundColor: c.background,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset('assets/images/logo_lookup.png', width: 150),
+                  const SizedBox(height: 28),
+                  Icon(Icons.cloud_off_outlined, size: 42, color: c.inkMuted),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.t('boot.error.title'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.t(messageKey),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: c.inkMuted, height: 1.45),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: Text(context.t('common.retry')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

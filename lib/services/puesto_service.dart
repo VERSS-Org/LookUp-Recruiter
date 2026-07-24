@@ -72,7 +72,8 @@ class PuestoService with ChangeNotifier {
       if (generation != _generation) return null;
       _setError('Error al obtener detalles de la vacante: $e');
       debugPrint('Error fetching puesto details: $e');
-      return null;
+      notifyListeners();
+      rethrow;
     }
   }
 

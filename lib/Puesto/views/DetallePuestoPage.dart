@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:lookup_flutter/services/puesto_service.dart';
-import 'package:lookup_flutter/services/locale_controller.dart';
+
 import 'package:lookup_flutter/Puesto/views/EditarPuestoPage.dart';
 import 'package:lookup_flutter/Puesto/views/PuestoCandidatosPage.dart';
+import 'package:lookup_flutter/services/locale_controller.dart';
+import 'package:lookup_flutter/services/puesto_service.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
-/// Detalle de una vacante con dos pestañas: detalle y postulantes.
+/// Detalle de una vacante con sus datos y postulantes.
 class DetallePuestoPage extends StatefulWidget {
-  final Map<String, dynamic> puesto;
-
   const DetallePuestoPage({super.key, required this.puesto});
+
+  final Map<String, dynamic> puesto;
 
   @override
   State<DetallePuestoPage> createState() => _DetallePuestoPageState();
@@ -19,6 +20,7 @@ class DetallePuestoPage extends StatefulWidget {
 
 class _DetallePuestoPageState extends State<DetallePuestoPage> {
   late Future<Map<String, dynamic>?> _puestoDetailFuture;
+  bool _isChangingState = false;
 
   String? get _puestoId =>
       (widget.puesto['puesto_id'] ?? widget.puesto['id'])?.toString();
@@ -34,88 +36,91 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
     setState(() {
       _puestoDetailFuture = puestoId == null
           ? Future.value(null)
-          : Provider.of<PuestoService>(context, listen: false)
-              .getPuestoDetails(puestoId);
+          : context.read<PuestoService>().getPuestoDetails(puestoId);
     });
   }
 
   Future<void> _cambiarEstado(Map<String, dynamic> puesto) async {
+    if (_isChangingState) return;
     final currentState = puesto['estado']?.toString() ?? 'abierto';
     final newState = currentState == 'abierto' ? 'cerrado' : 'abierto';
-
     final puestoId = _puestoId;
     final empresaId = puesto['empresa_id']?.toString();
     if (puestoId == null || empresaId == null) return;
 
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(
-            newState == 'cerrado'
-                ? context.tr('jobs.close')
-                : context.tr('jobs.reopen'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          newState == 'cerrado'
+              ? context.tr('jobs.close')
+              : context.tr('jobs.reopen'),
+        ),
+        content: Text(
+          newState == 'cerrado'
+              ? context.tr('jobs.close.confirm')
+              : context.tr('jobs.reopen.confirm'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.tr('common.cancel')),
           ),
-          content: Text(
-            newState == 'cerrado'
-                ? context.tr('jobs.close.confirm')
-                : context.tr('jobs.reopen.confirm'),
+          FilledButton(
+            style: newState == 'cerrado'
+                ? FilledButton.styleFrom(
+                    backgroundColor: context.colors.danger,
+                  )
+                : null,
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.tr('common.confirm')),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(context.tr('common.cancel')),
-            ),
-            FilledButton(
-              style: newState == 'cerrado'
-                  ? FilledButton.styleFrom(
-                      backgroundColor: context.colors.danger,
-                    )
-                  : null,
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(context.tr('common.confirm')),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
-
     if (confirm != true || !mounted) return;
 
-    final puestoService = Provider.of<PuestoService>(context, listen: false);
-    final success =
-        await puestoService.cambiarEstadoPuesto(puestoId, newState, empresaId);
-
-    if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            newState == 'cerrado'
-                ? context.tr('jobs.closed.ok')
-                : context.tr('jobs.reopened.ok'),
+    setState(() => _isChangingState = true);
+    try {
+      final service = context.read<PuestoService>();
+      final success = await service.cambiarEstadoPuesto(
+        puestoId,
+        newState,
+        empresaId,
+      );
+      if (!mounted) return;
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.tr(
+                newState == 'cerrado' ? 'jobs.closed.ok' : 'jobs.reopened.ok',
+              ),
+            ),
           ),
-        ),
-      );
-      _refreshPuestoDetails();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(puestoService.errorMessage ?? 'Error'),
-          backgroundColor: context.colors.danger,
-        ),
-      );
+        );
+        _refreshPuestoDetails();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              service.errorMessage ?? context.tr('common.error.generic'),
+            ),
+            backgroundColor: context.colors.danger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isChangingState = false);
     }
   }
 
   Future<void> _editarPuesto(Map<String, dynamic> puesto) async {
     final updated = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (context) => EditarPuestoPage(puesto: puesto)),
+      MaterialPageRoute(builder: (_) => EditarPuestoPage(puesto: puesto)),
     );
-    if (updated == true && mounted) {
-      _refreshPuestoDetails();
-    }
+    if (updated == true && mounted) _refreshPuestoDetails();
   }
 
   @override
@@ -125,9 +130,9 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
       child: Scaffold(
         appBar: AppBar(
           key: const ValueKey('vacancy-detail-appbar'),
-          toolbarHeight: 52,
+          toolbarHeight: 46,
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
+            preferredSize: const Size.fromHeight(44),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 980),
@@ -149,14 +154,27 @@ class _DetallePuestoPageState extends State<DetallePuestoPage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final displayPuesto = Map<String, dynamic>.from(widget.puesto);
-                if (snapshot.data != null) {
-                  displayPuesto.addAll(snapshot.data!);
-                }
-                return _DetalleTab(
-                  puesto: displayPuesto,
-                  onEditar: () => _editarPuesto(displayPuesto),
-                  onCambiarEstado: () => _cambiarEstado(displayPuesto),
+                final display = Map<String, dynamic>.from(widget.puesto);
+                if (snapshot.data != null) display.addAll(snapshot.data!);
+                final detail = _DetalleTab(
+                  puesto: display,
+                  onEditar: () => _editarPuesto(display),
+                  onCambiarEstado: () => _cambiarEstado(display),
+                  isChangingState: _isChangingState,
+                );
+                if (!snapshot.hasError) return detail;
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                      child: ErrorBanner(
+                        message: context.t('jobs.detail.load.error'),
+                        actionLabel: context.t('common.retry'),
+                        onAction: _refreshPuestoDetails,
+                      ),
+                    ),
+                    Expanded(child: detail),
+                  ],
                 );
               },
             ),
@@ -173,42 +191,52 @@ class _DetalleTab extends StatelessWidget {
     required this.puesto,
     required this.onEditar,
     required this.onCambiarEstado,
+    required this.isChangingState,
   });
 
   final Map<String, dynamic> puesto;
   final VoidCallback onEditar;
   final VoidCallback onCambiarEstado;
+  final bool isChangingState;
 
-  String _salario(BuildContext context) {
+  String _moneyNumber(dynamic value) {
+    final number = value is num ? value : num.tryParse('$value');
+    if (number == null) return '';
+    final integer = number.round();
+    final raw = '$integer';
+    final chars = raw.split('').reversed.toList();
+    final output = <String>[];
+    for (var index = 0; index < chars.length; index++) {
+      if (index > 0 && index % 3 == 0) output.add(',');
+      output.add(chars[index]);
+    }
+    return output.reversed.join();
+  }
+
+  String _salary(BuildContext context) {
     final min = puesto['salario_min'];
     final max = puesto['salario_max'];
-    final moneda = puesto['moneda']?.toString() ?? 'PEN';
-    String fmt(dynamic v) {
-      final n = v is num
-          ? v.toDouble()
-          : double.tryParse(v.toString().replaceAll(',', '.'));
-      if (n == null) return v.toString();
-      return n == n.roundToDouble()
-          ? n.toInt().toString()
-          : n.toStringAsFixed(2);
-    }
-
     if (min == null && max == null) return context.tr('salario.na');
-    if (min != null && max != null) return '${fmt(min)} - ${fmt(max)} $moneda';
-    return '${fmt(min ?? max)} $moneda';
+    final currency = switch (puesto['moneda']?.toString()) {
+      'USD' => r'$',
+      'EUR' => '€',
+      _ => 'S/',
+    };
+    if (min != null && max != null) {
+      return '$currency ${_moneyNumber(min)} - ${_moneyNumber(max)}';
+    }
+    return '$currency ${_moneyNumber(min ?? max)}';
   }
 
-  String _contrato(BuildContext context) {
-    final tipo = puesto['tipo_contrato']?.toString() ?? '';
-    if (tipo.isEmpty) return context.tr('contrato.na');
-    final key = 'contrato.$tipo';
-    final label = context.tr(key);
-    return label == key ? tipo.replaceAll('_', ' ') : label;
+  String _contract(BuildContext context) {
+    final raw = puesto['tipo_contrato']?.toString() ?? '';
+    final key = 'contrato.$raw';
+    final value = context.tr(key);
+    return value == key ? raw.replaceAll('_', ' ') : value;
   }
 
-  String get _fechaPublicacion {
-    final raw = puesto['fecha_publicacion']?.toString();
-    if (raw == null || raw.isEmpty) return '';
+  String get _publishedDate {
+    final raw = puesto['fecha_publicacion']?.toString() ?? '';
     final date = DateTime.tryParse(raw);
     if (date == null) return raw.split('T').first;
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -216,187 +244,118 @@ class _DetalleTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
-    final estadoActual = puesto['estado']?.toString() ?? 'abierto';
-    final isAbierto = estadoActual == 'abierto';
     final requisitos = (puesto['requisitos'] as List?) ?? const [];
-    final titulo = puesto['titulo']?.toString() ?? '—';
+    final title = puesto['titulo']?.toString() ?? '—';
 
-    return PageContainer(
-      maxWidth: 980,
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(
-          MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-          20,
-          MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-          32,
-        ),
+    return ViewportScrollPage(
+      maxWidth: 1020,
+      padding: EdgeInsets.fromLTRB(
+        MediaQuery.sizeOf(context).width < 600 ? 18 : 28,
+        18,
+        MediaQuery.sizeOf(context).width < 600 ? 18 : 28,
+        36,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 430;
-              final identity = Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  InitialsAvatar(
-                    name: titulo,
-                    size: 52,
-                    fallbackIcon: Icons.work_outline,
+          BrandGradientPanel(
+            showBottomLeftRing: false,
+            height: MediaQuery.sizeOf(context).width < 600 ? 112 : 104,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          titulo,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                  child: Text(
+                    title.trim().isEmpty ? '?' : title.trim()[0].toUpperCase(),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: kBrandBlueBright,
                         ),
-                        if (_fechaPublicacion.isNotEmpty) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            '${context.t('jobs.published')} $_fechaPublicacion',
-                            style: TextStyle(
-                              color: c.inkMuted,
-                              fontSize: 13.5,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
                   ),
-                ],
-              );
-              if (compact) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    identity,
-                    const SizedBox(height: 10),
-                    StatusChip(label: estadoActual),
-                  ],
-                );
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: identity),
-                  const SizedBox(width: 12),
-                  StatusChip(label: estadoActual),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _MetaChip(
-                icon: Icons.location_on_outlined,
-                label: puesto['ubicacion']?.toString().isNotEmpty == true
-                    ? puesto['ubicacion'].toString()
-                    : context.t('common.not_specified_f'),
-              ),
-              _MetaChip(icon: Icons.badge_outlined, label: _contrato(context)),
-              _MetaChip(
-                icon: Icons.payments_outlined,
-                label: _salario(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          SectionLabel(title: context.t('jobs.description')),
-          Text(
-            puesto['descripcion']?.toString() ?? '—',
-            style: TextStyle(color: c.ink, height: 1.55, fontSize: 14.5),
-          ),
-          if (requisitos.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            SectionLabel(title: context.t('jobs.requirements')),
-            ...requisitos.map((req) {
-              final texto = req is Map
-                  ? (req['descripcion']?.toString() ?? '')
-                  : req.toString();
-              final obligatorio = req is Map && req['es_obligatorio'] == true;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      obligatorio
-                          ? Icons.check_circle
-                          : Icons.check_circle_outline,
-                      size: 19,
-                      color: obligatorio ? c.brand : c.inkFaint,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        texto,
-                        style:
-                            TextStyle(color: c.ink, height: 1.4, fontSize: 14),
-                      ),
-                    ),
-                    if (!obligatorio)
-                      Text(
-                        context.t('jobs.desirable'),
-                        style: TextStyle(
-                          color: c.inkFaint,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
                 ),
-              );
-            }),
-          ],
-          const SizedBox(height: 20),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 560;
-              final editar = OutlinedButton.icon(
-                onPressed: onEditar,
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: Text(context.t('jobs.edit')),
-              );
-              final estado = isAbierto
-                  ? OutlinedButton.icon(
-                      onPressed: onCambiarEstado,
-                      icon: const Icon(Icons.lock_outline, size: 18),
-                      label: Text(context.t('jobs.close')),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: c.danger,
-                        side: BorderSide(
-                          color: c.danger.withValues(alpha: 0.4),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontSize: 19,
+                            ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        puesto['ubicacion']?.toString() ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 12,
                         ),
                       ),
-                    )
-                  : FilledButton.icon(
-                      onPressed: onCambiarEstado,
-                      icon: const Icon(Icons.lock_open_outlined, size: 18),
-                      label: Text(context.t('jobs.reopen')),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: c.success,
-                      ),
-                    );
-
-              if (!isWide) {
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _HeroStatus(
+                  open: puesto['estado']?.toString() != 'cerrado',
+                  label: context.t(
+                    puesto['estado']?.toString() == 'cerrado'
+                        ? 'jobs.closed.one'
+                        : 'jobs.open.one',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 720;
+              final description = _DescriptionColumn(
+                description: puesto['descripcion']?.toString() ?? '—',
+                requirements: requisitos,
+              );
+              final summary = _SummaryColumn(
+                salary: _salary(context),
+                contract: _contract(context),
+                location: puesto['ubicacion']?.toString() ??
+                    context.t('common.not_specified_f'),
+                published: _publishedDate,
+                isOpen: puesto['estado']?.toString() != 'cerrado',
+                sideBySide: wide,
+                onEdit: onEditar,
+                onChangeStatus: onCambiarEstado,
+                isChangingState: isChangingState,
+              );
+              if (!wide) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [editar, const SizedBox(height: 10), estado],
+                  children: [
+                    summary,
+                    const SizedBox(height: 24),
+                    description,
+                  ],
                 );
               }
               return Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  editar,
-                  const SizedBox(width: 12),
-                  estado,
+                  Expanded(flex: 7, child: description),
+                  const SizedBox(width: 28),
+                  Expanded(flex: 3, child: summary),
                 ],
               );
             },
@@ -407,37 +366,260 @@ class _DetalleTab extends StatelessWidget {
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.icon, required this.label});
+class _HeroStatus extends StatelessWidget {
+  const _HeroStatus({required this.open, required this.label});
 
-  final IconData icon;
+  final bool open;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
-    final maxWidth =
-        (MediaQuery.sizeOf(context).width - 64).clamp(160.0, 520.0).toDouble();
     return Container(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: c.surfaceAlt,
-        borderRadius: BorderRadius.circular(7),
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: c.inkMuted),
+          Icon(
+            open ? Icons.circle : Icons.lock_outline,
+            size: 10,
+            color: Colors.white,
+          ),
           const SizedBox(width: 5),
           Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DescriptionColumn extends StatelessWidget {
+  const _DescriptionColumn({
+    required this.description,
+    required this.requirements,
+  });
+
+  final String description;
+  final List<dynamic> requirements;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionLabel(title: context.t('jobs.description')),
+        Text(
+          description,
+          style: TextStyle(color: c.ink, height: 1.55, fontSize: 13.5),
+        ),
+        if (requirements.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          SectionLabel(title: context.t('jobs.requirements')),
+          for (final raw in requirements)
+            Builder(
+              builder: (context) {
+                final requirement = raw is Map
+                    ? Map<String, dynamic>.from(raw)
+                    : <String, dynamic>{'descripcion': '$raw'};
+                final mandatory = requirement['es_obligatorio'] == true;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        mandatory
+                            ? Icons.check_circle
+                            : Icons.check_circle_outline,
+                        size: 17,
+                        color: mandatory ? c.brand : c.inkFaint,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          requirement['descripcion']?.toString() ?? '',
+                          style: TextStyle(
+                              color: c.ink, fontSize: 13, height: 1.4),
+                        ),
+                      ),
+                      if (!mandatory)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: c.surfaceAlt,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            context.t('jobs.desirable'),
+                            style: TextStyle(
+                              color: c.inkMuted,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SummaryColumn extends StatelessWidget {
+  const _SummaryColumn({
+    required this.salary,
+    required this.contract,
+    required this.location,
+    required this.published,
+    required this.isOpen,
+    required this.sideBySide,
+    required this.onEdit,
+    required this.onChangeStatus,
+    required this.isChangingState,
+  });
+
+  final String salary;
+  final String contract;
+  final String location;
+  final String published;
+  final bool isOpen;
+  final bool sideBySide;
+  final VoidCallback onEdit;
+  final VoidCallback onChangeStatus;
+  final bool isChangingState;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: sideBySide
+          ? const EdgeInsets.only(left: 18)
+          : const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        border: sideBySide
+            ? Border(left: BorderSide(color: c.border))
+            : Border(bottom: BorderSide(color: c.border)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            context.t('jobs.summary').toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.t('jobs.monthly_salary').toUpperCase(),
             style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: c.inkMuted,
+              color: c.inkFaint,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            salary,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: c.accent,
+                ),
+          ),
+          const SizedBox(height: 16),
+          _SummaryRow(label: context.t('form.contract'), value: contract),
+          _SummaryRow(label: context.t('form.city'), value: location),
+          _SummaryRow(
+              label: context.t('jobs.published.short'), value: published),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, size: 17),
+            label: Text(context.t('jobs.edit')),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: isChangingState ? null : onChangeStatus,
+            icon: isChangingState
+                ? const SizedBox(
+                    width: 17,
+                    height: 17,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    isOpen ? Icons.lock_outline : Icons.lock_open_outlined,
+                    size: 17,
+                  ),
+            label: Text(
+              context.t(isOpen ? 'jobs.close' : 'jobs.reopen'),
+            ),
+            style: isOpen
+                ? OutlinedButton.styleFrom(
+                    foregroundColor: c.danger,
+                    side: BorderSide(color: c.danger.withValues(alpha: 0.45)),
+                  )
+                : null,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.t(
+              isOpen ? 'jobs.close.helper' : 'jobs.reopen.helper',
+            ),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: c.inkFaint, fontSize: 12, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: context.colors.inkMuted, fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: context.colors.ink,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

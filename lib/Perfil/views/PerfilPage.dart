@@ -54,6 +54,7 @@ class _PerfilPageState extends State<PerfilPage> {
     final nombre = rawNombre.isEmpty ? 'Empresa' : rawNombre;
     final ciudad = profile['ciudad']?.toString().trim() ?? '';
     final descripcion = perfil['descripcion']?.toString().trim() ?? '';
+    final showMobileLogout = MediaQuery.sizeOf(context).width < 960;
 
     return Scaffold(
       // Dentro del shell web la pestaña de perfil ya aporta el contexto. El
@@ -71,10 +72,10 @@ class _PerfilPageState extends State<PerfilPage> {
       body: profileService.isLoading && profile.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : profileService.errorMessage != null && profile.isEmpty
-              ? PageContainer(
+              ? ViewportScrollPage(
                   maxWidth: 760,
-                  child: ListView(
-                    padding: const EdgeInsets.all(22),
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
                     children: [
                       ErrorBanner(
                         message: context.t('profile.load.error'),
@@ -84,204 +85,276 @@ class _PerfilPageState extends State<PerfilPage> {
                     ],
                   ),
                 )
-              : PageContainer(
-                  maxWidth: 760,
-                  child: ScrollConfiguration(
-                    behavior: ScrollConfiguration.of(context).copyWith(
-                      scrollbars: false,
-                    ),
-                    child: ListView(
-                      key: const ValueKey('company-profile-scroll'),
-                      padding: EdgeInsets.fromLTRB(
-                        MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                        22,
-                        MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                        32,
-                      ),
-                      children: [
-                        if (profileService.errorMessage != null) ...[
-                          ErrorBanner(
-                            message: context.t('profile.load.error'),
-                            actionLabel: context.t('common.retry'),
-                            onAction: _loadProfile,
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        ProfileBanner(
-                          avatar: InitialsAvatar(
-                            name: nombre,
-                            size: 88,
-                            imageUrl: profile['foto_url']?.toString(),
-                            fallbackIcon: Icons.business_outlined,
-                          ),
-                          title: nombre,
-                          subtitle: ciudad,
-                          caption: profile['email']?.toString().trim() ?? '',
-                          action: Wrap(
-                            alignment: WrapAlignment.end,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Tooltip(
-                                message: context.t('profile.change_logo'),
-                                child: OutlinedButton.icon(
-                                  key: const ValueKey(
-                                    'company-change-logo-action',
-                                  ),
-                                  icon: const Icon(
-                                    Icons.photo_camera_outlined,
-                                    size: 17,
-                                  ),
-                                  label: Text(
-                                    context.t('profile.change_logo'),
-                                  ),
-                                  style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size(0, 36),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                  ),
-                                  onPressed: () => _showPhotoDialog(context),
-                                ),
-                              ),
-                              IconButton.outlined(
+              : ViewportScrollPage(
+                  maxWidth: 920,
+                  key: const ValueKey('company-profile-scroll'),
+                  padding: EdgeInsets.fromLTRB(
+                    MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+                    22,
+                    MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
+                    32,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (profileService.errorMessage != null) ...[
+                        ErrorBanner(
+                          message: context.t('profile.load.error'),
+                          actionLabel: context.t('common.retry'),
+                          onAction: _loadProfile,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      ProfileBanner(
+                        avatar: InitialsAvatar(
+                          name: nombre,
+                          size: 88,
+                          imageUrl: profile['foto_url']?.toString(),
+                          fallbackIcon: Icons.business_outlined,
+                        ),
+                        title: nombre,
+                        subtitle: ciudad,
+                        caption: profile['email']?.toString().trim() ?? '',
+                        action: Wrap(
+                          alignment: WrapAlignment.end,
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Tooltip(
+                              message: context.t('profile.change_logo'),
+                              child: OutlinedButton.icon(
                                 key: const ValueKey(
-                                  'company-edit-profile-action',
+                                  'company-change-logo-action',
                                 ),
-                                tooltip: context.t('profile.edit'),
-                                style: IconButton.styleFrom(
-                                  minimumSize: const Size(36, 36),
-                                  fixedSize: const Size(36, 36),
-                                  padding: const EdgeInsets.all(8),
-                                  side: BorderSide(color: c.border),
-                                ),
-                                icon: const Icon(Icons.edit_outlined, size: 18),
-                                onPressed: () => _showEditDialog(
-                                  context,
-                                  authService,
-                                  profile,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        SectionLabel(
-                          title: context.t('profile.about'),
-                          actionLabel: context.t('common.edit'),
-                          onAction: () =>
-                              _editarDescripcion(context, perfil, descripcion),
-                        ),
-                        Text(
-                          descripcion.isEmpty
-                              ? context.t('profile.about.hint')
-                              : descripcion,
-                          style: TextStyle(
-                            color: descripcion.isEmpty ? c.inkFaint : c.ink,
-                            height: 1.5,
-                            fontSize: 14.5,
-                            fontStyle:
-                                descripcion.isEmpty ? FontStyle.italic : null,
-                          ),
-                        ),
-                        const SizedBox(height: 22),
-                        SectionLabel(title: context.t('profile.details')),
-                        InfoRow(
-                          key: const ValueKey('company-email-row'),
-                          icon: Icons.email_outlined,
-                          label: context.t('auth.email'),
-                          value: profile['email']?.toString().trim() ?? '—',
-                        ),
-                        InfoRow(
-                          key: const ValueKey('company-phone-row'),
-                          icon: Icons.phone_outlined,
-                          label: context.t('profile.phone'),
-                          value: (profile['telefono']?.toString() ?? '').isEmpty
-                              ? context.t('common.not_specified')
-                              : profile['telefono'].toString().trim(),
-                        ),
-                        InfoRow(
-                          key: const ValueKey('company-city-row'),
-                          icon: Icons.location_on_outlined,
-                          label: context.t('profile.city'),
-                          value: (profile['ciudad']?.toString() ?? '').isEmpty
-                              ? context.t('common.not_specified_f')
-                              : profile['ciudad'].toString().trim(),
-                        ),
-                        const SizedBox(height: 22),
-                        SectionLabel(title: context.t('settings.title')),
-                        Text(
-                          context.t('settings.theme'),
-                          style: TextStyle(fontSize: 13.5, color: c.inkMuted),
-                        ),
-                        const SizedBox(height: 8),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SegmentedButton<ThemeMode>(
-                            segments: [
-                              ButtonSegment(
-                                value: ThemeMode.light,
-                                label: Text(context.t('settings.theme.light')),
-                                icon: const Icon(Icons.light_mode_outlined,
-                                    size: 17),
-                              ),
-                              ButtonSegment(
-                                value: ThemeMode.dark,
-                                label: Text(context.t('settings.theme.dark')),
-                                icon: const Icon(Icons.dark_mode_outlined,
-                                    size: 17),
-                              ),
-                              ButtonSegment(
-                                value: ThemeMode.system,
-                                label: Text(context.t('settings.theme.system')),
                                 icon: const Icon(
-                                  Icons.brightness_auto_outlined,
+                                  Icons.photo_camera_outlined,
                                   size: 17,
                                 ),
+                                label: Text(
+                                  context.t('profile.change_logo'),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(0, 36),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                ),
+                                onPressed: () => _showPhotoDialog(context),
+                              ),
+                            ),
+                            IconButton.outlined(
+                              key: const ValueKey(
+                                'company-edit-profile-action',
+                              ),
+                              tooltip: context.t('profile.edit'),
+                              style: IconButton.styleFrom(
+                                minimumSize: const Size(36, 36),
+                                fixedSize: const Size(36, 36),
+                                padding: const EdgeInsets.all(8),
+                                side: BorderSide(color: c.border),
+                              ),
+                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              onPressed: () => _showEditDialog(
+                                context,
+                                authService,
+                                profile,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 26),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final wide = constraints.maxWidth >= 700;
+                          final about = Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SectionLabel(
+                                title: context.t('profile.about'),
+                                actionLabel: context.t('common.edit'),
+                                onAction: () => _editarDescripcion(
+                                  context,
+                                  perfil,
+                                  descripcion,
+                                ),
+                              ),
+                              Text(
+                                descripcion.isEmpty
+                                    ? context.t('profile.about.hint')
+                                    : descripcion,
+                                style: TextStyle(
+                                  color:
+                                      descripcion.isEmpty ? c.inkFaint : c.ink,
+                                  height: 1.5,
+                                  fontSize: 13,
+                                  fontStyle: descripcion.isEmpty
+                                      ? FontStyle.italic
+                                      : null,
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              SectionLabel(
+                                title: context.t('profile.details'),
+                              ),
+                              InfoRow(
+                                key: const ValueKey('company-phone-row'),
+                                icon: Icons.phone_outlined,
+                                label: context.t('profile.phone'),
+                                value: (profile['telefono']?.toString() ?? '')
+                                        .isEmpty
+                                    ? context.t('common.not_specified')
+                                    : profile['telefono'].toString().trim(),
+                              ),
+                              InfoRow(
+                                key: const ValueKey('company-city-row'),
+                                icon: Icons.location_on_outlined,
+                                label: context.t('profile.city'),
+                                value: (profile['ciudad']?.toString() ?? '')
+                                        .isEmpty
+                                    ? context.t(
+                                        'common.not_specified_f',
+                                      )
+                                    : profile['ciudad'].toString().trim(),
                               ),
                             ],
-                            selected: {themeController.mode},
-                            onSelectionChanged: (selection) =>
-                                themeController.setMode(selection.first),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          context.t('settings.language'),
-                          style: TextStyle(fontSize: 13.5, color: c.inkMuted),
-                        ),
-                        const SizedBox(height: 8),
-                        SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'es', label: Text('Español')),
-                            ButtonSegment(value: 'en', label: Text('English')),
-                          ],
-                          selected: {localeController.language},
-                          onSelectionChanged: (selection) =>
-                              localeController.setLanguage(selection.first),
-                        ),
-                        const SizedBox(height: 24),
-                        SectionLabel(title: context.t('settings.security')),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.lock_outline),
-                          label: Text(context.t('settings.change_password')),
-                          onPressed: () =>
-                              _showChangePasswordDialog(context, authService),
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.logout),
-                          label: Text(context.t('nav.logout')),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: c.danger,
-                            side: BorderSide(
-                                color: c.danger.withValues(alpha: 0.4)),
-                          ),
-                          onPressed: () =>
-                              _showLogoutDialog(context, authService),
-                        ),
-                      ],
-                    ),
+                          );
+                          final preferences = Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SectionLabel(
+                                title: context.t('settings.preferences'),
+                              ),
+                              Text(
+                                context.t('settings.theme'),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: c.inkMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: SegmentedButton<ThemeMode>(
+                                  showSelectedIcon: false,
+                                  segments: [
+                                    ButtonSegment(
+                                      value: ThemeMode.light,
+                                      label: Text(
+                                        context.t('settings.theme.light'),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.light_mode_outlined,
+                                        size: 15,
+                                      ),
+                                    ),
+                                    ButtonSegment(
+                                      value: ThemeMode.dark,
+                                      label: Text(
+                                        context.t('settings.theme.dark'),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.dark_mode_outlined,
+                                        size: 15,
+                                      ),
+                                    ),
+                                    ButtonSegment(
+                                      value: ThemeMode.system,
+                                      label: Text(
+                                        context.t('settings.theme.system'),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.brightness_auto_outlined,
+                                        size: 15,
+                                      ),
+                                    ),
+                                  ],
+                                  selected: {themeController.mode},
+                                  onSelectionChanged: (selection) =>
+                                      themeController.setMode(selection.first),
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                              Text(
+                                context.t('settings.language'),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: c.inkMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              SegmentedButton<String>(
+                                showSelectedIcon: false,
+                                segments: const [
+                                  ButtonSegment(
+                                    value: 'es',
+                                    label: Text('Español'),
+                                  ),
+                                  ButtonSegment(
+                                    value: 'en',
+                                    label: Text('English'),
+                                  ),
+                                ],
+                                selected: {localeController.language},
+                                onSelectionChanged: (selection) =>
+                                    localeController
+                                        .setLanguage(selection.first),
+                              ),
+                              const SizedBox(height: 22),
+                              SectionLabel(
+                                title: context.t('settings.security'),
+                              ),
+                              OutlinedButton.icon(
+                                icon: const Icon(
+                                  Icons.lock_outline,
+                                  size: 17,
+                                ),
+                                label: Text(
+                                  context.t('settings.change_password'),
+                                ),
+                                onPressed: () => _showChangePasswordDialog(
+                                  context,
+                                  authService,
+                                ),
+                              ),
+                              if (showMobileLogout) ...[
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.logout, size: 17),
+                                  label: Text(context.t('nav.logout')),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: c.danger,
+                                    side: BorderSide(
+                                      color: c.danger.withValues(alpha: 0.45),
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      _confirmLogout(context, authService),
+                                ),
+                              ],
+                            ],
+                          );
+                          if (!wide) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                about,
+                                const SizedBox(height: 26),
+                                preferences,
+                              ],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: about),
+                              const SizedBox(width: 36),
+                              Expanded(child: preferences),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
     );
@@ -357,39 +430,36 @@ class _PerfilPageState extends State<PerfilPage> {
     }
   }
 
-  void _showLogoutDialog(BuildContext context, AuthService authService) {
+  Future<void> _confirmLogout(
+    BuildContext context,
+    AuthService authService,
+  ) async {
     final rootNavigator = Navigator.of(context, rootNavigator: true);
-    showDialog(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(dialogContext.tr('nav.logout')),
-          content: Text('${dialogContext.tr('nav.logout')}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(dialogContext.tr('common.cancel')),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.t('nav.logout')),
+        content: Text(dialogContext.t('logout.confirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.t('common.cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: dialogContext.colors.danger,
             ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: dialogContext.colors.danger,
-              ),
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                await authService.logout();
-                if (rootNavigator.mounted) {
-                  rootNavigator.pushNamedAndRemoveUntil(
-                    '/login',
-                    (route) => false,
-                  );
-                }
-              },
-              child: Text(dialogContext.tr('nav.logout')),
-            ),
-          ],
-        );
-      },
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(dialogContext.t('nav.logout')),
+          ),
+        ],
+      ),
     );
+    if (confirmed != true) return;
+    await authService.logout();
+    if (rootNavigator.mounted) {
+      rootNavigator.pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 }
 
@@ -750,22 +820,26 @@ class _LogoDialogState extends State<_LogoDialog> {
   bool _isSaving = false;
 
   Future<void> _pickImage() async {
-    final picked = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1600,
-      imageQuality: 88,
-    );
-    if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
-    if (bytes.length > 3 * 1024 * 1024) {
-      setState(() => _error = context.tr('photo.too_big'));
-      return;
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        imageQuality: 88,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      if (bytes.length > 3 * 1024 * 1024) {
+        setState(() => _error = context.tr('photo.too_big'));
+        return;
+      }
+      setState(() {
+        _bytes = bytes;
+        _error = null;
+      });
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
     }
-    setState(() {
-      _bytes = bytes;
-      _error = null;
-    });
   }
 
   Future<void> _save() async {
@@ -807,57 +881,68 @@ class _LogoDialogState extends State<_LogoDialog> {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final cropSize =
+        (MediaQuery.sizeOf(context).width - 112).clamp(160.0, 260.0).toDouble();
     return AlertDialog(
       title: Text(context.t('photo.title')),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 380),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_bytes == null)
-              Container(
-                width: 220,
-                height: 220,
-                decoration: BoxDecoration(
-                  color: c.surfaceAlt,
-                  shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_bytes == null)
+                Container(
+                  width: cropSize,
+                  height: cropSize,
+                  decoration: BoxDecoration(
+                    color: c.surfaceAlt,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.business, color: c.inkFaint, size: 72),
+                )
+              else ...[
+                PhotoCropper(
+                  key: _cropperKey,
+                  imageBytes: _bytes!,
+                  size: cropSize,
                 ),
-                child: Icon(Icons.business, color: c.inkFaint, size: 72),
-              )
-            else ...[
-              PhotoCropper(key: _cropperKey, imageBytes: _bytes!),
-              const SizedBox(height: 4),
+                const SizedBox(height: 4),
+                Text(
+                  context.t('photo.adjust'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: c.inkFaint, fontSize: 12),
+                ),
+              ],
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.upload_file_outlined, size: 18),
+                label: Text(
+                  _bytes == null
+                      ? context.t('photo.pick')
+                      : context.t('photo.change'),
+                ),
+                onPressed: _isSaving ? null : _pickImage,
+              ),
+              const SizedBox(height: 6),
               Text(
-                context.t('photo.adjust'),
+                context.t('photo.formats'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: c.inkFaint, fontSize: 12),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: c.danger,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.upload_file_outlined, size: 18),
-              label: Text(
-                _bytes == null
-                    ? context.t('photo.pick')
-                    : context.t('photo.change'),
-              ),
-              onPressed: _isSaving ? null : _pickImage,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              context.t('photo.formats'),
-              textAlign: TextAlign.center,
-              style: TextStyle(color: c.inkFaint, fontSize: 12),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: c.danger, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
       actions: [

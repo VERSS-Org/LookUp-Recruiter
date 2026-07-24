@@ -250,6 +250,9 @@ class AuthService with ChangeNotifier {
       return false;
     } on ApiException catch (e) {
       debugPrint('Token refresh error: $e');
+      if (e.isConnectionError || (e.statusCode ?? 0) >= 500) {
+        rethrow;
+      }
       if (refreshGeneration == _sessionGeneration &&
           {400, 401, 403, 404}.contains(e.statusCode)) {
         await logout();
@@ -258,7 +261,7 @@ class AuthService with ChangeNotifier {
     } catch (e) {
       // Un fallo de red transitorio no borra una sesión potencialmente válida.
       debugPrint('Token refresh unavailable: $e');
-      return false;
+      rethrow;
     }
   }
 
@@ -274,7 +277,10 @@ class AuthService with ChangeNotifier {
       if (_cuentaId != null) await prefs.setString('cuentaId', _cuentaId!);
       if (_role != null) await prefs.setString('role', _role!);
       return true;
-    } catch (e) {
+    } on ApiException catch (e) {
+      if (e.isConnectionError || (e.statusCode ?? 0) >= 500) {
+        rethrow;
+      }
       debugPrint('Stored session is not valid: $e');
       return false;
     }

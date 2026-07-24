@@ -64,30 +64,28 @@ class CrearPuestoPage extends StatelessWidget {
     final c = context.colors;
     return Scaffold(
       appBar: AppBar(title: Text(context.t('jobs.publish'))),
-      body: PageContainer(
+      body: ViewportScrollPage(
         maxWidth: 760,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                context.t('jobs.new.title'),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                context.t('jobs.new.subtitle'),
-                style: TextStyle(color: c.inkMuted, fontSize: 14.5),
-              ),
-              const SizedBox(height: 20),
-              PuestoForm(
-                submitLabel: context.t('jobs.publish'),
-                submittingLabel: context.t('jobs.publishing'),
-                onSubmit: (data) => _crear(context, data),
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              context.t('jobs.new.title'),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              context.t('jobs.new.subtitle'),
+              style: TextStyle(color: c.inkMuted, fontSize: 14.5),
+            ),
+            const SizedBox(height: 20),
+            PuestoForm(
+              submitLabel: context.t('jobs.publish'),
+              submittingLabel: context.t('jobs.publishing'),
+              onSubmit: (data) => _crear(context, data),
+            ),
+          ],
         ),
       ),
     );

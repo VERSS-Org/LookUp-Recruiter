@@ -79,19 +79,11 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
   }
 
   void _openNotifications() {
-    context.read<PostulacionService>().markEventosSeen();
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => const NovedadesEmpresa(showBack: true),
       ),
-    );
-  }
-
-  void _openMessages() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const MensajesEmpresa(showBack: true)),
     );
   }
 
@@ -156,20 +148,25 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
         onNavigateToOfertas: () => _navigateTo(1),
       ),
       const GestionarOfertas(),
+      const MensajesEmpresa(embedded: true),
+      const PerfilPage(),
     ];
-    final mobileIndex = _currentIndex.clamp(0, 1);
+    final mobileIndex = _currentIndex.clamp(0, 3);
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
-        leadingWidth: 56,
-        leading: BadgedIconButton(
-          icon: Icons.chat_bubble_outline,
-          count: unread,
-          tooltip: context.t('nav.messages'),
-          onPressed: _openMessages,
-        ),
-        title: const BrandMark(size: 31),
+        centerTitle: false,
+        titleSpacing: 16,
+        title: _currentIndex == 2
+            ? Text(context.t('nav.messages'))
+            : InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _navigateTo(0),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 7),
+                  child: BrandMark(size: 34),
+                ),
+              ),
         actions: [
           BadgedIconButton(
             icon: Icons.notifications_outlined,
@@ -185,11 +182,12 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
                     const <String, dynamic>{};
                 return InkWell(
                   customBorder: const CircleBorder(),
-                  onTap: () => Scaffold.of(context).openEndDrawer(),
+                  onTap: () => _navigateTo(3),
                   child: InitialsAvatar(
                     name: profile['nombre_completo']?.toString() ?? '?',
                     size: 34,
                     imageUrl: profile['foto_url']?.toString(),
+                    circular: true,
                   ),
                 );
               },
@@ -216,6 +214,21 @@ class _BarraNavegacionState extends State<BarraNavegacion> {
               icon: const Icon(Icons.work_outline),
               selectedIcon: const Icon(Icons.work),
               label: context.t('nav.vacancies'),
+            ),
+            NavigationDestination(
+              icon: unread > 0
+                  ? Badge.count(
+                      count: unread,
+                      child: const Icon(Icons.chat_bubble_outline),
+                    )
+                  : const Icon(Icons.chat_bubble_outline),
+              selectedIcon: const Icon(Icons.chat_bubble),
+              label: context.t('nav.messages'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.business_outlined),
+              selectedIcon: const Icon(Icons.business),
+              label: context.t('nav.my_profile'),
             ),
           ],
         ),
@@ -244,11 +257,13 @@ class _DesktopTopBar extends StatelessWidget {
         const <String, dynamic>{};
     final nombre = profile['nombre_completo']?.toString() ?? 'Empresa';
     final compactNav = MediaQuery.sizeOf(context).width < 1240;
+    final popupHeight =
+        (MediaQuery.sizeOf(context).height - 76).clamp(240.0, 430.0);
 
     return Container(
       key: const ValueKey('desktop-company-navbar'),
-      height: 64,
-      padding: EdgeInsets.symmetric(horizontal: compactNav ? 14 : 18),
+      height: 52,
+      padding: EdgeInsets.symmetric(horizontal: compactNav ? 12 : 18),
       decoration: BoxDecoration(
         color: c.surface,
         border: Border(bottom: BorderSide(color: c.border)),
@@ -259,23 +274,36 @@ class _DesktopTopBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             onTap: () => onSelect(0),
             child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: BrandMark(size: 38),
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+              child: BrandMark(size: 32),
             ),
           ),
-          SizedBox(width: compactNav ? 8 : 16),
+          const SizedBox(width: 7),
+          Text(
+            context.t('nav.company').toUpperCase(),
+            style: TextStyle(
+              color: c.inkFaint,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          SizedBox(width: compactNav ? 6 : 12),
           _DesktopNavItem(
+            icon: Icons.home_outlined,
             label: context.t('nav.home'),
             selected: index == 0,
             compact: compactNav,
             onTap: () => onSelect(0),
           ),
           _DesktopNavItem(
+            icon: Icons.work_outline,
             label: context.t('nav.vacancies'),
             selected: index == 1,
             compact: compactNav,
             onTap: () => onSelect(1),
           ),
+          const SizedBox(width: 6),
           const Spacer(),
           BadgedIconButton(
             icon: Icons.chat_outlined,
@@ -288,16 +316,19 @@ class _DesktopTopBar extends StatelessWidget {
             tooltip: context.t('notif.title'),
             position: PopupMenuPosition.under,
             offset: const Offset(0, 6),
-            constraints: const BoxConstraints.tightFor(
+            constraints: BoxConstraints.tightFor(
               width: 420,
-              height: 480,
+              height: popupHeight,
             ),
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem<void>(
                 enabled: false,
                 padding: EdgeInsets.zero,
-                height: 480,
-                child: NovedadesEmpresa(compact: true),
+                height: popupHeight,
+                child: NovedadesEmpresa(
+                  compact: true,
+                  compactHeight: popupHeight,
+                ),
               ),
             ],
             icon: eventos > 0
@@ -307,7 +338,7 @@ class _DesktopTopBar extends StatelessWidget {
                   )
                 : const Icon(Icons.notifications_outlined),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 5),
           PopupMenuButton<String>(
             key: const ValueKey('desktop-company-profile-menu'),
             tooltip: nombre,
@@ -350,8 +381,9 @@ class _DesktopTopBar extends StatelessWidget {
             },
             child: InitialsAvatar(
               name: nombre,
-              size: 34,
+              size: 30,
               imageUrl: profile['foto_url']?.toString(),
+              circular: true,
             ),
           ),
         ],
@@ -362,12 +394,14 @@ class _DesktopTopBar extends StatelessWidget {
 
 class _DesktopNavItem extends StatelessWidget {
   const _DesktopNavItem({
+    required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
     this.compact = false,
   });
 
+  final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -379,28 +413,31 @@ class _DesktopNavItem extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,
-      child: Container(
-        height: 60,
-        padding: EdgeInsets.symmetric(horizontal: compact ? 7 : 14),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        height: 34,
+        padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 11),
+        decoration: BoxDecoration(
+          color: selected
+              ? c.brand.withValues(alpha: context.isDark ? 0.22 : 0.09)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 3),
+            Icon(
+              icon,
+              size: 15,
+              color: selected ? c.brand : c.inkMuted,
+            ),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                fontSize: compact ? 13.5 : 14,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                fontSize: compact ? 11.5 : 12.5,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                 color: selected ? c.brand : c.inkMuted,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Container(
-              height: 2.5,
-              width: 26,
-              decoration: BoxDecoration(
-                color: selected ? c.brand : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
               ),
             ),
           ],
@@ -426,8 +463,7 @@ class _CompanyDrawer extends StatelessWidget {
     return Drawer(
       backgroundColor: c.surface,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
@@ -437,6 +473,7 @@ class _CompanyDrawer extends StatelessWidget {
                     name: nombre,
                     size: 52,
                     imageUrl: profile['foto_url']?.toString(),
+                    circular: true,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -485,7 +522,7 @@ class _CompanyDrawer extends StatelessWidget {
               child: Text(
                 context.t('settings.title').toUpperCase(),
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1,
                   color: c.inkFaint,
@@ -547,7 +584,6 @@ class _CompanyDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            const Spacer(),
             Divider(color: c.border, height: 1),
             ListTile(
               leading: Icon(Icons.logout, color: c.danger),

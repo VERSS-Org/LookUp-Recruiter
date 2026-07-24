@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+
 import 'package:lookup_flutter/services/api_service.dart';
 import 'package:lookup_flutter/services/locale_controller.dart';
 import 'package:lookup_flutter/theme/lookup_theme.dart';
 import 'package:lookup_flutter/theme/lookup_widgets.dart';
 
-/// Perfil público de un postulante visto por la empresa: datos de contacto y
-/// perfil profesional extendido (experiencia, educación, habilidades, etc.).
+/// Perfil público de un postulante visto por una empresa.
 class CandidatoPerfilPage extends StatefulWidget {
   const CandidatoPerfilPage({
     super.key,
     required this.cuentaId,
     this.profileLoader,
+    this.onContact,
   });
 
   final String cuentaId;
   final Future<Map<String, dynamic>?> Function(String cuentaId)? profileLoader;
+  final VoidCallback? onContact;
 
   @override
   State<CandidatoPerfilPage> createState() => _CandidatoPerfilPageState();
@@ -43,7 +45,6 @@ class _CandidatoPerfilPageState extends State<CandidatoPerfilPage> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     return Scaffold(
       appBar: AppBar(title: Text(context.t('candprofile.title'))),
       body: FutureBuilder<Map<String, dynamic>?>(
@@ -53,10 +54,10 @@ class _CandidatoPerfilPageState extends State<CandidatoPerfilPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.data == null) {
-            return PageContainer(
+            return ViewportScrollPage(
               maxWidth: 760,
-              child: ListView(
-                padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(22),
+              child: Column(
                 children: [
                   ErrorBanner(
                     message: context.t('candprofile.load.error'),
@@ -67,115 +68,253 @@ class _CandidatoPerfilPageState extends State<CandidatoPerfilPage> {
               ),
             );
           }
-          final cuenta = snapshot.data!;
-          final nombre = cuenta['nombre_completo']?.toString() ??
-              context.t('common.applicant');
-          final perfil = cuenta['perfil'] is Map
-              ? Map<String, dynamic>.from(cuenta['perfil'] as Map)
-              : const <String, dynamic>{};
-          final descripcion = perfil['descripcion']?.toString() ?? '';
-          final habilidades = (perfil['habilidades'] as List?) ?? const [];
-          final email = perfil['mostrar_email'] == false
-              ? ''
-              : (cuenta['email']?.toString().trim() ?? '');
 
-          return ListView(
+          final account = snapshot.data!;
+          final profile = account['perfil'] is Map
+              ? Map<String, dynamic>.from(account['perfil'] as Map)
+              : const <String, dynamic>{};
+          final name = account['nombre_completo']?.toString() ??
+              context.t('common.applicant');
+          final email = profile['mostrar_email'] == false
+              ? ''
+              : (account['email']?.toString().trim() ?? '');
+          final description = profile['descripcion']?.toString().trim() ?? '';
+          final skills = (profile['habilidades'] as List?) ?? const [];
+
+          return ViewportScrollPage(
             key: const ValueKey('candidate-profile-page-scroll'),
-            padding: EdgeInsets.zero,
-            children: [
-              PageContainer(
-                maxWidth: 760,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                    22,
-                    MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                    32,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ProfileBanner(
-                        avatar: InitialsAvatar(
-                          name: nombre,
-                          size: 88,
-                          imageUrl: cuenta['foto_url']?.toString(),
-                        ),
-                        title: nombre,
-                        subtitle: [
-                          if ((cuenta['carrera']?.toString() ?? '').isNotEmpty)
-                            cuenta['carrera'].toString(),
-                          if ((cuenta['ciudad']?.toString() ?? '').isNotEmpty)
-                            cuenta['ciudad'].toString(),
-                        ].join(' · '),
-                        caption: email,
-                      ),
-                      if (descripcion.isNotEmpty) ...[
-                        const SizedBox(height: 22),
-                        SectionLabel(title: context.t('candprofile.about')),
-                        Text(
-                          descripcion,
-                          style: TextStyle(
-                              color: c.ink, height: 1.55, fontSize: 14.5),
-                        ),
-                      ],
-                      _EntrySection(
-                        title: context.t('candprofile.experience'),
-                        icon: Icons.work_outline,
-                        entries: perfil['experiencia'],
-                        titleKey: 'puesto',
-                        subtitleKeys: const ['organizacion', 'periodo'],
-                        bodyKey: 'descripcion',
-                      ),
-                      _EntrySection(
-                        title: context.t('candprofile.education'),
-                        icon: Icons.school_outlined,
-                        entries: perfil['educacion'],
-                        titleKey: 'titulo',
-                        subtitleKeys: const ['institucion', 'periodo'],
-                      ),
-                      _EntrySection(
-                        title: context.t('candprofile.certificates'),
-                        icon: Icons.verified_outlined,
-                        entries: perfil['certificados'],
-                        titleKey: 'nombre',
-                        subtitleKeys: const ['anio'],
-                      ),
-                      if (habilidades.isNotEmpty) ...[
-                        SectionLabel(title: context.t('candprofile.skills')),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final habilidad in habilidades)
-                              Chip(label: Text(habilidad.toString())),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                      ],
-                      _EntrySection(
-                        title: context.t('candprofile.languages'),
-                        icon: Icons.translate_outlined,
-                        entries: perfil['idiomas'],
-                        titleKey: 'idioma',
-                        subtitleKeys: const ['nivel'],
-                      ),
-                      _EntrySection(
-                        title: context.t('candprofile.extras'),
-                        icon: Icons.star_outline,
-                        entries: perfil['extras'],
-                        titleKey: 'titulo',
-                        subtitleKeys: const [],
-                        bodyKey: 'descripcion',
-                      ),
-                    ],
-                  ),
+            maxWidth: 780,
+            padding: EdgeInsets.fromLTRB(
+              MediaQuery.sizeOf(context).width < 600 ? 18 : 28,
+              24,
+              MediaQuery.sizeOf(context).width < 600 ? 18 : 28,
+              36,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _CandidateHeader(
+                  name: name,
+                  imageUrl: account['foto_url']?.toString(),
+                  career: account['carrera']?.toString() ?? '',
+                  city: account['ciudad']?.toString() ?? '',
+                  email: email,
+                  onContact: widget.onContact,
                 ),
-              ),
-            ],
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _SectionCaption(
+                    text: context.t('candprofile.about'),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: context.colors.ink,
+                      fontSize: 13,
+                      height: 1.55,
+                    ),
+                  ),
+                ],
+                _EntrySection(
+                  title: context.t('candprofile.experience'),
+                  icon: Icons.work_outline,
+                  entries: profile['experiencia'],
+                  titleKey: 'puesto',
+                  subtitleKeys: const ['organizacion', 'periodo'],
+                  bodyKey: 'descripcion',
+                ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final wide = constraints.maxWidth >= 640;
+                    final left = Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _EntrySection(
+                          title: context.t('candprofile.education'),
+                          icon: Icons.school_outlined,
+                          entries: profile['educacion'],
+                          titleKey: 'titulo',
+                          subtitleKeys: const ['institucion', 'periodo'],
+                        ),
+                        _EntrySection(
+                          title: context.t('candprofile.certificates'),
+                          icon: Icons.verified_outlined,
+                          entries: profile['certificados'],
+                          titleKey: 'nombre',
+                          subtitleKeys: const ['anio'],
+                        ),
+                      ],
+                    );
+                    final right = Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (skills.isNotEmpty) ...[
+                          const SizedBox(height: 18),
+                          _SectionCaption(
+                            text: context.t('candprofile.skills'),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 7,
+                            runSpacing: 7,
+                            children: [
+                              for (final skill in skills)
+                                Chip(
+                                  visualDensity: VisualDensity.compact,
+                                  label: Text(skill.toString()),
+                                ),
+                            ],
+                          ),
+                        ],
+                        _EntrySection(
+                          title: context.t('candprofile.languages'),
+                          icon: Icons.translate_outlined,
+                          entries: profile['idiomas'],
+                          titleKey: 'idioma',
+                          subtitleKeys: const ['nivel'],
+                        ),
+                        _EntrySection(
+                          title: context.t('candprofile.extras'),
+                          icon: Icons.star_outline,
+                          entries: profile['extras'],
+                          titleKey: 'titulo',
+                          subtitleKeys: const [],
+                          bodyKey: 'descripcion',
+                        ),
+                      ],
+                    );
+                    if (!wide) {
+                      return Column(children: [left, right]);
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: left),
+                        const SizedBox(width: 32),
+                        Expanded(child: right),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           );
         },
       ),
+    );
+  }
+}
+
+class _CandidateHeader extends StatelessWidget {
+  const _CandidateHeader({
+    required this.name,
+    required this.imageUrl,
+    required this.career,
+    required this.city,
+    required this.email,
+    required this.onContact,
+  });
+
+  final String name;
+  final String? imageUrl;
+  final String career;
+  final String city;
+  final String email;
+  final VoidCallback? onContact;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final details = [career, city].where((value) => value.trim().isNotEmpty);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        final identity = Row(
+          children: [
+            InitialsAvatar(
+              name: name,
+              size: compact ? 52 : 58,
+              imageUrl: imageUrl,
+              circular: true,
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (details.isNotEmpty)
+                    Text(
+                      details.join(' · '),
+                      style: TextStyle(color: c.inkMuted, fontSize: 12),
+                    ),
+                  if (email.isNotEmpty)
+                    Text(
+                      email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: c.inkFaint, fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        );
+        final action = onContact == null
+            ? null
+            : OutlinedButton.icon(
+                onPressed: onContact,
+                icon: const Icon(Icons.chat_outlined, size: 17),
+                label: Text(context.t('cand.contact')),
+              );
+
+        return Container(
+          padding: const EdgeInsets.only(bottom: 18),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: c.border)),
+          ),
+          child: compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    identity,
+                    if (action != null) ...[
+                      const SizedBox(height: 14),
+                      action,
+                    ],
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: identity),
+                    if (action != null) ...[
+                      const SizedBox(width: 16),
+                      action,
+                    ],
+                  ],
+                ),
+        );
+      },
+    );
+  }
+}
+
+class _SectionCaption extends StatelessWidget {
+  const _SectionCaption({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall,
     );
   }
 }
@@ -200,35 +339,31 @@ class _EntrySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final lista = entries is List
+    final list = entries is List
         ? (entries as List)
             .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
+            .map((item) => Map<String, dynamic>.from(item))
             .toList()
         : const <Map<String, dynamic>>[];
-    if (lista.isEmpty) return const SizedBox.shrink();
+    if (list.isEmpty) return const SizedBox.shrink();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionLabel(title: title),
-        ...lista.map((entry) {
-          final sub = subtitleKeys
-              .map((k) => entry[k]?.toString() ?? '')
-              .where((v) => v.isNotEmpty)
-              .join(' · ');
-          final body =
-              bodyKey == null ? '' : (entry[bodyKey!]?.toString() ?? '');
-          return Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+        const SizedBox(height: 20),
+        _SectionCaption(text: title),
+        const SizedBox(height: 4),
+        for (final entry in list)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 9),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: c.border)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 19, color: c.inkFaint),
-                const SizedBox(width: 12),
+                Icon(icon, size: 16, color: c.inkFaint),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,24 +371,31 @@ class _EntrySection extends StatelessWidget {
                       Text(
                         entry[titleKey]?.toString() ?? '—',
                         style: TextStyle(
-                          fontWeight: FontWeight.w600,
                           color: c.ink,
-                          fontSize: 14.5,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (sub.isNotEmpty)
+                      if (subtitleKeys
+                          .map((key) => entry[key]?.toString() ?? '')
+                          .where((value) => value.isNotEmpty)
+                          .isNotEmpty)
                         Text(
-                          sub,
-                          style: TextStyle(color: c.inkMuted, fontSize: 13),
+                          subtitleKeys
+                              .map((key) => entry[key]?.toString() ?? '')
+                              .where((value) => value.isNotEmpty)
+                              .join(' · '),
+                          style: TextStyle(color: c.inkMuted, fontSize: 12),
                         ),
-                      if (body.isNotEmpty)
+                      if (bodyKey != null &&
+                          (entry[bodyKey!]?.toString() ?? '').isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
-                            body,
+                            entry[bodyKey!].toString(),
                             style: TextStyle(
                               color: c.inkMuted,
-                              fontSize: 13,
+                              fontSize: 12,
                               height: 1.4,
                             ),
                           ),
@@ -263,9 +405,7 @@ class _EntrySection extends StatelessWidget {
                 ),
               ],
             ),
-          );
-        }),
-        const SizedBox(height: 18),
+          ),
       ],
     );
   }

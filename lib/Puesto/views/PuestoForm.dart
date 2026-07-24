@@ -33,6 +33,7 @@ class PuestoForm extends StatefulWidget {
     required this.submitLabel,
     required this.submittingLabel,
     required this.onSubmit,
+    this.onCancel,
   });
 
   /// Puesto existente para precargar los campos (modo edicion).
@@ -40,6 +41,7 @@ class PuestoForm extends StatefulWidget {
   final String submitLabel;
   final String submittingLabel;
   final Future<bool> Function(PuestoFormData data) onSubmit;
+  final VoidCallback? onCancel;
 
   static const List<String> ciudadesPeru = [
     'Lima',
@@ -220,307 +222,392 @@ class _PuestoFormState extends State<PuestoForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+          _FormSectionTitle(text: context.t('form.data')),
+          const SizedBox(height: 14),
+          _FormFieldLabel(text: context.t('form.title')),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _tituloController,
+            textInputAction: TextInputAction.next,
+            validator: (value) => value == null || value.trim().isEmpty
+                ? context.tr('form.required')
+                : null,
+          ),
+          const SizedBox(height: 13),
+          _FormFieldLabel(text: context.t('form.description')),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _descripcionController,
+            minLines: 4,
+            maxLines: 7,
+            validator: (value) => value == null || value.trim().isEmpty
+                ? context.tr('form.required')
+                : null,
+          ),
+          const SizedBox(height: 13),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 560;
+              final city = _LabeledField(
+                label: context.t('form.city'),
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedCiudad,
+                  isExpanded: true,
+                  items: [
+                    for (final city in PuestoForm.ciudadesPeru)
+                      DropdownMenuItem(value: city, child: Text(city)),
+                  ],
+                  onChanged: (value) => setState(() => _selectedCiudad = value),
+                  validator: (value) =>
+                      value == null ? context.tr('form.city.required') : null,
+                ),
+              );
+              final contract = _LabeledField(
+                label: context.t('form.contract'),
+                child: DropdownButtonFormField<String>(
+                  key: const ValueKey('vacancy-contract-field'),
+                  initialValue: _selectedTipoContrato,
+                  isExpanded: true,
+                  items: [
+                    for (final type in PuestoForm.tiposContrato)
+                      DropdownMenuItem(
+                        value: type,
+                        child: Text(context.t('contrato.$type')),
+                      ),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _selectedTipoContrato = value),
+                  validator: (value) => value == null
+                      ? context.tr('form.contract.required')
+                      : null,
+                ),
+              );
+              if (!wide) {
+                return Column(
+                  children: [city, const SizedBox(height: 13), contract],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Expanded(child: city),
+                  const SizedBox(width: 12),
+                  Expanded(child: contract),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 13),
+          _FormFieldLabel(text: context.t('form.address')),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _direccionController,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 13),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 620;
+              final currency = _LabeledField(
+                label: context.t('form.currency'),
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedMoneda,
+                  items: [
+                    for (final currency in PuestoForm.monedas)
+                      DropdownMenuItem(
+                        value: currency,
+                        child: Text(currency),
+                      ),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _selectedMoneda = value ?? 'PEN'),
+                ),
+              );
+              final minimum = _LabeledField(
+                label: context.t('form.salary_min'),
+                child: TextFormField(
+                  controller: _salarioMinController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  validator: _validateSalary,
+                ),
+              );
+              final maximum = _LabeledField(
+                label: context.t('form.salary_max'),
+                child: TextFormField(
+                  controller: _salarioMaxController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    final salaryError = _validateSalary(value);
+                    if (salaryError != null) return salaryError;
+                    final min = _parseSalary(_salarioMinController.text);
+                    final max = _parseSalary(value ?? '');
+                    return min != null && max != null && max < min
+                        ? context.tr('form.salary.order')
+                        : null;
+                  },
+                ),
+              );
+              if (!wide) {
+                return Column(
+                  children: [
+                    currency,
+                    const SizedBox(height: 13),
+                    minimum,
+                    const SizedBox(height: 13),
+                    maximum,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(width: 120, child: currency),
+                  const SizedBox(width: 12),
+                  Expanded(child: minimum),
+                  const SizedBox(width: 12),
+                  Expanded(child: maximum),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 26),
+          Divider(color: context.colors.border),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _FormSectionTitle(
+                  text: context.t('form.requirements'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  context.t('form.requirements.hint'),
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: context.colors.inkFaint,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 620;
+              final field = TextFormField(
+                controller: _requisitoController,
+                decoration: InputDecoration(
+                  hintText: context.t('form.requirement.example'),
+                ),
+                onFieldSubmitted: (_) => _agregarRequisito(),
+              );
+              final toggle = Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
+                    value: _requisitoObligatorio,
+                    onChanged: (value) =>
+                        setState(() => _requisitoObligatorio = value),
+                  ),
+                  const SizedBox(width: 5),
                   Text(
-                    context.t('form.data'),
+                    context.t('form.requirement.required'),
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
                       color: context.colors.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _tituloController,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: context.t('form.title'),
-                      prefixIcon: const Icon(Icons.badge_outlined),
-                    ),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? context.tr('form.required')
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _descripcionController,
-                    decoration: InputDecoration(
-                      labelText: context.t('form.description'),
-                      alignLabelWithHint: true,
-                      prefixIcon: const Icon(Icons.notes_outlined),
-                    ),
-                    minLines: 4,
-                    maxLines: 7,
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? context.tr('form.required')
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth >= 620;
-                      final cityField = DropdownButtonFormField<String>(
-                        initialValue: _selectedCiudad,
-                        decoration: InputDecoration(
-                          labelText: context.t('form.city'),
-                          prefixIcon: const Icon(Icons.location_city_outlined),
-                        ),
-                        items: PuestoForm.ciudadesPeru.map((ciudad) {
-                          return DropdownMenuItem<String>(
-                            value: ciudad,
-                            child: Text(ciudad),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) =>
-                            setState(() => _selectedCiudad = newValue),
-                        validator: (value) => value == null
-                            ? context.tr('form.city.required')
-                            : null,
-                      );
-                      final contractField = DropdownButtonFormField<String>(
-                        initialValue: _selectedTipoContrato,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: context.t('form.contract'),
-                          prefixIcon: const Icon(Icons.assignment_outlined),
-                        ),
-                        key: const ValueKey('vacancy-contract-field'),
-                        items: PuestoForm.tiposContrato.map((tipo) {
-                          return DropdownMenuItem<String>(
-                            value: tipo,
-                            child: Text(context.t('contrato.$tipo')),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) =>
-                            setState(() => _selectedTipoContrato = newValue),
-                        validator: (value) => value == null
-                            ? context.tr('form.contract.required')
-                            : null,
-                      );
-
-                      if (!isWide) {
-                        return Column(
-                          children: [
-                            cityField,
-                            const SizedBox(height: 12),
-                            contractField,
-                          ],
-                        );
-                      }
-
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: cityField),
-                          const SizedBox(width: 12),
-                          Expanded(child: contractField),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _direccionController,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: context.t('form.address'),
-                      prefixIcon: const Icon(Icons.location_on_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth >= 620;
-                      final currencyField = DropdownButtonFormField<String>(
-                        initialValue: _selectedMoneda,
-                        decoration: InputDecoration(
-                          labelText: context.tr('form.currency'),
-                          prefixIcon:
-                              const Icon(Icons.currency_exchange_outlined),
-                        ),
-                        items: PuestoForm.monedas.map((moneda) {
-                          return DropdownMenuItem<String>(
-                            value: moneda,
-                            child: Text(moneda),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) => setState(
-                          () => _selectedMoneda = newValue ?? 'PEN',
-                        ),
-                      );
-                      final minField = TextFormField(
-                        controller: _salarioMinController,
-                        decoration: InputDecoration(
-                          labelText: context.tr('form.salary_min'),
-                          prefixIcon: const Icon(Icons.payments_outlined),
-                          suffixText: _selectedMoneda,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        validator: _validateSalary,
-                      );
-                      final maxField = TextFormField(
-                        controller: _salarioMaxController,
-                        decoration: InputDecoration(
-                          labelText: context.tr('form.salary_max'),
-                          prefixIcon: const Icon(Icons.payments),
-                          suffixText: _selectedMoneda,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        validator: (value) {
-                          final salaryError = _validateSalary(value);
-                          if (salaryError != null) return salaryError;
-                          final min = _parseSalary(_salarioMinController.text);
-                          final max = _parseSalary(value ?? '');
-                          if (min != null && max != null && max < min) {
-                            return context.tr('form.salary.order');
-                          }
-                          return null;
-                        },
-                      );
-
-                      if (!isWide) {
-                        return Column(
-                          children: [
-                            currencyField,
-                            const SizedBox(height: 12),
-                            minField,
-                            const SizedBox(height: 12),
-                            maxField,
-                          ],
-                        );
-                      }
-
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(width: 130, child: currencyField),
-                          const SizedBox(width: 12),
-                          Expanded(child: minField),
-                          const SizedBox(width: 12),
-                          Expanded(child: maxField),
-                        ],
-                      );
-                    },
                   ),
                 ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    context.t('form.requirements'),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: context.colors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    context.t('form.requirements.hint'),
-                    style: TextStyle(
-                      color: context.colors.inkMuted,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _requisitoController,
-                          decoration: InputDecoration(
-                            labelText: context.t('form.requirement.example'),
-                            prefixIcon: const Icon(Icons.playlist_add_check),
-                          ),
-                          onFieldSubmitted: (_) => _agregarRequisito(),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      IconButton.filled(
-                        tooltip: context.t('common.add'),
-                        onPressed: _agregarRequisito,
-                        icon: const Icon(Icons.add),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _requisitoObligatorio,
-                        onChanged: (value) => setState(
-                          () => _requisitoObligatorio = value ?? true,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          context.t('form.requirement.mandatory'),
-                          style: TextStyle(
-                            color: context.colors.ink,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_requisitos.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (var i = 0; i < _requisitos.length; i++)
-                          Chip(
-                            avatar: Icon(
-                              _requisitos[i]['es_obligatorio'] == true
-                                  ? Icons.check_circle
-                                  : Icons.check_circle_outline,
-                              size: 18,
-                              color: context.colors.brand,
-                            ),
-                            label: Text(
-                              _requisitos[i]['descripcion'].toString(),
-                            ),
-                            onDeleted: () =>
-                                setState(() => _requisitos.removeAt(i)),
-                          ),
-                      ],
+              );
+              final add = OutlinedButton.icon(
+                onPressed: _agregarRequisito,
+                icon: const Icon(Icons.add, size: 16),
+                label: Text(context.t('common.add')),
+              );
+              if (!wide) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    field,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [Expanded(child: toggle), add],
                     ),
                   ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: field),
+                  const SizedBox(width: 10),
+                  toggle,
+                  const SizedBox(width: 10),
+                  add,
                 ],
+              );
+            },
+          ),
+          if (_requisitos.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            for (var index = 0; index < _requisitos.length; index++)
+              _RequirementRow(
+                requirement: _requisitos[index],
+                onDelete: () => setState(() => _requisitos.removeAt(index)),
               ),
+          ],
+          const SizedBox(height: 26),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 440;
+              final cancel = OutlinedButton(
+                onPressed: _isSubmitting
+                    ? null
+                    : widget.onCancel ?? () => Navigator.maybePop(context),
+                child: Text(context.t('common.cancel')),
+              );
+              final submit = FilledButton.icon(
+                onPressed: _isSubmitting ? null : _submit,
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        width: 17,
+                        height: 17,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.publish_outlined, size: 17),
+                label: Text(
+                  _isSubmitting ? widget.submittingLabel : widget.submitLabel,
+                ),
+              );
+              if (compact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [submit, const SizedBox(height: 8), cancel],
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [cancel, const SizedBox(width: 10), submit],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FormSectionTitle extends StatelessWidget {
+  const _FormSectionTitle({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall,
+    );
+  }
+}
+
+class _FormFieldLabel extends StatelessWidget {
+  const _FormFieldLabel({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: context.colors.ink,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _LabeledField extends StatelessWidget {
+  const _LabeledField({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _FormFieldLabel(text: label),
+        const SizedBox(height: 6),
+        child,
+      ],
+    );
+  }
+}
+
+class _RequirementRow extends StatelessWidget {
+  const _RequirementRow({
+    required this.requirement,
+    required this.onDelete,
+  });
+
+  final Map<String, dynamic> requirement;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final mandatory = requirement['es_obligatorio'] == true;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: c.border)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            mandatory ? Icons.check_circle : Icons.check_circle_outline,
+            size: 16,
+            color: mandatory ? c.brand : c.inkFaint,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              requirement['descripcion']?.toString() ?? '',
+              style: TextStyle(color: c.ink, fontSize: 12),
             ),
           ),
-          const SizedBox(height: 18),
-          ElevatedButton.icon(
-            onPressed: _isSubmitting ? null : _submit,
-            icon: _isSubmitting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.publish_outlined),
-            label: Text(
-              _isSubmitting ? widget.submittingLabel : widget.submitLabel,
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: c.surfaceAlt,
+              borderRadius: BorderRadius.circular(999),
             ),
+            child: Text(
+              context.t(
+                mandatory ? 'form.requirement.required' : 'jobs.desirable',
+              ),
+              style: TextStyle(color: c.inkMuted, fontSize: 9.5),
+            ),
+          ),
+          IconButton(
+            tooltip: context.t('common.delete'),
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline, size: 17),
           ),
         ],
       ),
